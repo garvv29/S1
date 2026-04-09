@@ -1,0 +1,131 @@
+/* CSS Document */
+
+
+
+body{ 
+	margin-top:0px; 
+	background-color:#fff; font-family:Arial, Helvetica, sans-serif; font-size:12px; margin:0 0 0 0; padding:0 0 0 0; }
+
+.headerwrapper{ float:left; position:relative; width:1003px; height:67px; background:url(../images/header_bg.gif); background-repeat:no-repeat; background-position:right top; border:0px solid red; z-index:1000;}
+.logo{ float:left; position:relative; padding-left:10px; padding-top:5px;}
+.toplinks{ float:right; position:relative; border:0px solid green; padding-top:1px; width:18%; font-size:11px; font-weight:bold;}
+.toplinks ul li{ float:left; position:relative; display:inline;}
+.toplinks ul li a{ color:#000000; text-decoration:none;}
+.toplinks ul li a:hover{ color:#000000; text-decoration:underline;}
+.midbgline{ background:url(../images/midblue_img.gif); background-repeat:repeat-y; width:989px;float:left; position:relative; left:7px }
+.border_bottom{ background:url(../images/blue_bottomline.gif); background-repeat:no-repeat; width:985px;float:left; position:relative; left:7px; height:5px; font-size:0;}
+.footer{ float:left; position:relative; width:979px; padding-left:10px;}
+
+.menuswrapper{ float:left; position:relative; width:550px; left:50px; height:25px; z-index:500;  top:40px; border:0px solid green; }
+
+/************************************* tab menu start *************************/
+
+#navigation{
+float:left; position:relative;
+width:100%; 
+padding:0; border:0px solid red; 
+ z-index:500; }
+
+#navigation ul{
+line-height:normal;
+padding: 0; margin:0;
+list-style-type: none;
+font-size:12px; font-weight:bold;
+}
+
+/*Top level list items*/
+#navigation ul li{
+position: relative;
+display: inline; margin:0; padding-right:3px; width:104px;background:url(../images/bgmenutab.gif); background-repeat:no-repeat; 
+float: left;  
+
+}
+
+/*Top level menu link items style*/
+#navigation ul li a{
+display: block;
+ width:104px; height:19px; padding-top:3px; padding-bottom:3px;  text-align:center; margin:0 0 0 0;
+border-left-width: 0;
+text-decoration: none; line-height:19px; z-index:400; 
+color: #000;
+}
+	
+#navigation ul li a:hover{
+
+color: white; background:url(../images/bgmenutab_seleted.gif); background-repeat:no-repeat; width:104px; height:25px; z-index:200;   margin:0 0 0 0;}
+
+/*1st sub level menu*/
+#navigation ul li ul{
+position: absolute; border-top:2px solid #5398ee;  width:178px;  line-height:15px;height:15px;
+top:0; /* no need to change, as true value set by script */
+display: block;  background-color:#bbdefe;
+visibility: hidden; margin:0 0 0 0px; z-index:800; padding:0 0 0 0; 
+} 
+
+/*Sub level menu list items (undo style from Top level List Items)*/
+#navigation ul li ul li{
+display: list-item; background:none;
+float: none; width:180px;
+}
+
+/*All subsequent sub menu levels offset after 1st level sub menu */
+#navigation ul li ul li ul{ 
+left: 159px; /* no need to change, as true value set by script */
+top: 0; 
+}
+
+/* Sub level menu links style */
+#navigation ul li ul li a{
+display:block; 
+width:180px;    /*width of sub menu levels*/ margin:0 0 0 0; padding:0 0 0 0;
+ text-align:left; 
+text-decoration: none;
+}
+
+#navigation ul li a:hover{
+color:#fff;  
+}
+
+
+* html p#iepara{ /*For a paragraph (if any) that immediately follows suckertree menu, add 1em top spacing between the two in IE*/
+padding-top: 0; }
+
+
+/*1st sub level menu*/
+#navigation ul li ul{
+left: 0;
+position: absolute;
+top: 0em; /* no need to change, as true value set by script */
+display: block;
+visibility: hidden; 
+}
+
+/*Sub level menu list items (undo style from Top level List Items)*/
+#navigation ul li ul li{
+display: list-item; 
+float: none; float:left; position:relative;  width:180px; margin:0 0 0 0; padding:0 0 0 0;
+}
+
+/*All subsequent sub menu levels offset after 1st level sub menu */
+#navigation ul li ul li ul{ 
+left: 159px; /* no need to change, as true value set by script */
+top: 0;  float:left; position:relative; 
+}
+
+#navigation ul li ul li a{
+display: block; 
+ /*width of sub menu levels*/
+color:#505050;
+text-decoration: none;  border-bottom:1px solid #6cb1f4;border-left:1px solid #6cb1f4;border-right:1px solid #6cb1f4;
+padding: 0px 0px; float:left; position:relative; background-color:#bbdefe;
+
+}
+#navigation ul li ul li a:hover{
+color:white; font-weight:bold;  background:none; background-color:#5398ee;  margin:0 0 0 0; padding:0 0 0 0;
+width:180px; float:left; position:relative;  border-bottom:0px solid #6cb1f4; line-height:19px; height:19px;
+}
+
+
+
+
+
