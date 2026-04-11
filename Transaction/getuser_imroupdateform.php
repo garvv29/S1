@@ -311,6 +311,18 @@ $sql_sub="insert into tblarrival_sub (arrival_id, classification_id, item_id, qt
 if(mysql_query($sql_sub) or die(mysql_error()))
 {
 $subid=mysql_insert_id();
+
+// Auto-link all draft QRs for this classification+item
+$sql_update_qr = "UPDATE tbl_qr_codes 
+                 SET arrival_id = '$mainid',
+                     arrsub_id = '$subid',
+                     linked_status = 'linked'
+                 WHERE linked_status = 'draft'
+                   AND arrsub_id = 0
+                   AND classification_id = '$n'
+                   AND item_id = '$o'";
+mysql_query($sql_update_qr) or die(mysql_error());
+
 if($god1==1)
 {
 $sql_sub_sub="insert into tblarr_sloc (arr_type, arr_tr_id, arr_id, classification_id, item_id, whid, binid, subbin, qty_good, ups_good, qty_damage, ups_damage, rowid) values('Internalreturn', '$mainid', '$subid', '$n', '$o', '$y', '$z', '$a1', '$b1', '$c1', '0', '0', '$rowid1')";
@@ -354,6 +366,18 @@ $sql_sub="insert into tblarrival_sub (arrival_id, classification_id, item_id, qt
 if(mysql_query($sql_sub) or die(mysql_error()))
 {
 $subid=mysql_insert_id();
+
+// Auto-link all draft QRs for this classification+item
+$sql_update_qr = "UPDATE tbl_qr_codes 
+                 SET arrival_id = '$mainid',
+                     arrsub_id = '$subid',
+                     linked_status = 'linked'
+                 WHERE linked_status = 'draft'
+                   AND arrsub_id = 0
+                   AND classification_id = '$n'
+                   AND item_id = '$o'";
+mysql_query($sql_update_qr) or die(mysql_error());
+
 if($god1==1)
 {
 $sql_sub_sub="insert into tblarr_sloc (arr_type, arr_tr_id, arr_id, classification_id, item_id, whid, binid, subbin, qty_good, ups_good, qty_damage, ups_damage, rowid) values('Internalreturn', '$mainid', '$subid', '$n', '$o', '$y', '$z', '$a1', '$b1', '$c1', '0', '0', '$rowid1')";
@@ -581,7 +605,7 @@ $classqry=mysql_query("select classification_id, classification from tbl_classif
 ?>
  <tr class="Dark" height="25">
            <td width="226"  align="right"  valign="middle" class="tblheading">&nbsp;Classification&nbsp;</td>
-           <td align="left"  valign="middle" colspan="3" class="tbltext">&nbsp;<select class="tbltext" name="txtclass" style="width:230px;" onchange="modetchk(this.value)">
+           <td align="left"  valign="middle" colspan="3" class="tbltext">&nbsp;<select class="tbltext" name="txtclass" style="width:230px;" onchange="if(typeof modetchk === 'function') { modetchk(this.value); } getClassificationType(this.value);">
 <option value="" selected>--Select Classification--</option>
 	<?php while($noticia_class = mysql_fetch_array($classqry)) { ?>
 		<option value="<?php echo $noticia_class['classification_id'];?>" />   
@@ -603,7 +627,7 @@ $itemqry=mysql_query("select items_id, stores_item from tbl_stores order by stor
 <input type="hidden" name="itmdchk" value="<?php echo $itmdchk;?>" />
  <tr class="Light" height="30">
 <td align="right"  valign="middle" class="tblheading">UPS Good&nbsp;</td>
-<td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtupsg" type="text" size="10" class="tbltext" tabindex=""   maxlength="5" onkeypress="return isNumberKey(event)" onchange="upschk(this.value);"/>&nbsp;<font color="#FF0000">*</font>&nbsp;</td>
+<td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtupsg" type="text" size="10" class="tbltext" tabindex=""   maxlength="5" onkeypress="return isNumberKey(event)" onchange="upschk(this.value); getClassificationType(document.querySelector('select[name=txtclass]').value); checkGenerateQRVisibility();"/>&nbsp;<font color="#FF0000">*</font>&nbsp;<a href="javascript:void(0);" id="generateQR" style="display:none; color:#0066CC; text-decoration:underline; cursor:pointer; font-weight:bold; margin-left:10px;" onclick="openGenerateQR(); return false;">Generate QR</a>&nbsp;</td>
 
 <td align="right"  valign="middle" class="tblheading">Quantity Good&nbsp;</td>
 <td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtqtyg" type="text" size="10" class="tbltext" tabindex="" maxlength="7" onkeypress="return isNumberKey(event)" onchange="qtychk(this.value);">&nbsp;<font color="#FF0000">*</font>&nbsp;</td>
@@ -655,9 +679,42 @@ $itemqry=mysql_query("select items_id, stores_item from tbl_stores order by stor
 </table>
 </div>
 <input type="hidden" name="maintrid" value="<?php echo $tid;?>" /><input type="hidden" name="subtrid" value="<?php echo $subtid;?>" />
+<input type="hidden" name="response_arrival_id" value="<?php echo isset($mainid) ? $mainid : 0; ?>" />
+<input type="hidden" name="response_arrsub_id" value="<?php echo isset($subid) ? $subid : 0; ?>" />
 
 <table align="center" width="850" cellpadding="5" cellspacing="5" border="0" >
 <tr >
 <td valign="top" align="right"><img src="../images/post.gif" border="0"style="display:inline;cursor:hand;" onclick="pform();" />&nbsp;&nbsp;</td>
 </tr>
 </table></div>
+
+<script>
+// Verify QR functions are available and add event listeners for injected form
+console.log('Form injected - verifying QR functions...');
+console.log('checkGenerateQRVisibility available:', typeof checkGenerateQRVisibility === 'function');
+console.log('openGenerateQR available:', typeof openGenerateQR === 'function');
+console.log('getClassificationType available:', typeof getClassificationType === 'function');
+
+// Find and update the UPS field event listener to ensure checkGenerateQRVisibility is called
+var upsField = document.querySelector('input[name="txtupsg"]');
+if(upsField) {
+	console.log('UPS field found, adding change listener');
+	upsField.addEventListener('change', function() {
+		console.log('UPS field changed, calling checkGenerateQRVisibility');
+		checkGenerateQRVisibility();
+	});
+}
+
+// Find classification dropdown and ensure it's working
+var classField = document.querySelector('select[name="txtclass"]');
+if(classField) {
+	console.log('Classification field found, adding change listener');
+	classField.addEventListener('change', function() {
+		console.log('Classification changed to:', this.value);
+		// Ensure getClassificationType is called
+		if(typeof getClassificationType === 'function') {
+			getClassificationType(this.value);
+		}
+	});
+}
+</script>

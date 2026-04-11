@@ -548,8 +548,8 @@ $arrival_id=$row_tbl['arrival_id'];
 	  
 <form name="frmaddDepartment" method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>"   > 
 	 <input name="frm_action" value="submit" type="hidden"> 
+	 <input type="hidden" name="p_id" value="<?php echo $pid?>" />
 	 	<input type="hidden" name="logid" value="<?php echo $logid?>" />
-		<input type="hidden" name="txtitem" value="<?php echo $pid?>" />
 		<input type="hidden" name="remarks" value="<?php echo $remarks?>" />
 		<input type="hidden" name="date" value="<?php echo $tdate?>" />
 		</br>
@@ -581,7 +581,7 @@ $arrival_id=$row_tbl['arrival_id'];
 
 <td align="right"  valign="middle" class="tblheading">Vendor&nbsp;</td>
 <td align="left"  valign="middle" class="tbltext" >&nbsp;<?php echo $row3['business_name'];?></td>
-	<td align="right"  valign="middle" class="tblheading">D.C./Inv. No &nbsp;</td>
+	<td align="right"  valign="middle" class="tblheading">D.C./Inv. Noï¿½&nbsp;</td>
 <td align="left"  valign="middle" class="tbltext" colspan="3">&nbsp;<?php echo $row_tbl['dcno'];?></td>
 
            </tr>

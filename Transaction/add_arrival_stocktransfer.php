@@ -23,7 +23,7 @@
 
 	//$logid="OP1";
 	//$lgnid="OP1";
-	if(isset($_POST['frm_action'])=='submit')
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{
 		
 		
@@ -1789,13 +1789,18 @@ $classqry=mysql_query("select classification_id, classification from tbl_classif
 ?>
  <tr class="Dark" height="25">
            <td width="226"  align="right"  valign="middle" class="tblheading">&nbsp;Classification&nbsp;</td>
-           <td align="left"  valign="middle" colspan="3" class="tbltext">&nbsp;<select class="tbltext" name="txtclass" style="width:230px;" onchange="modetchk(this.value)">
+           <td align="left"  valign="middle" colspan="3" class="tbltext">&nbsp;<select class="tbltext" name="txtclass" style="width:230px;" onchange="modetchk(this.value); getClassificationType(this.value);">
 <option value="" selected>--Select Classification--</option>
 	<?php while($noticia_class = mysql_fetch_array($classqry)) { ?>
 		<option value="<?php echo $noticia_class['classification_id'];?>" />   
 		<?php echo $noticia_class['classification'];?>
 		<?php } ?>
 	</select><font color="#FF0000">*</font>	</td></tr>
+<div style="display:none;">
+<strong>QR Response IDs:</strong><br/>
+ARRIVAL_ID: <span id="response_arrival_id"></span><br/>
+ARRSUB_ID: <span id="response_arrsub_id"></span>
+</div>
  <?php 
 $itemqry=mysql_query("select items_id, stores_item from tbl_stores order by stores_item") or die(mysql_error());
 ?>            
@@ -1818,7 +1823,7 @@ $itemqry=mysql_query("select items_id, stores_item from tbl_stores order by stor
 
  <tr class="Light" height="30">
 <td align="right"  valign="middle" class="tblheading">UPS Good&nbsp;</td>
-<td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtupsg" type="text" size="10" class="tbltext" tabindex=""   maxlength="5" onkeypress="return isNumberKey(event)" onchange="upschk(this.value);"/>&nbsp;<font color="#FF0000">*</font>&nbsp;</td>
+<td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtupsg" type="text" size="10" class="tbltext" tabindex=""   maxlength="5" onkeypress="return isNumberKey(event)" onchange="upschk(this.value); getClassificationType(document.querySelector('select[name=txtclass]').value); checkGenerateQRVisibility();"/>&nbsp;<font color="#FF0000">*</font>&nbsp;<a href="javascript:void(0);" id="generateQR" style="display:none; color:#0066CC; text-decoration:underline; cursor:pointer; font-weight:bold; margin-left:10px;" onclick="openGenerateQR(); return false;">Generate QR</a>&nbsp;</td>
 
 <td align="right"  valign="middle" class="tblheading">Quantity Good&nbsp;</td>
 <td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtqtyg" type="text" size="10" class="tbltext" tabindex="" maxlength="7" onkeypress="return isNumberKey(event)" onchange="qtychk(this.value);">&nbsp;<font color="#FF0000">*</font>&nbsp;</td>

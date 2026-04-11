@@ -22,7 +22,7 @@
 	
 	//$logid="OP1";
 	//$lgnid="OP1";
-	if(isset($_POST['frm_action'])=='submit')
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{
 		
 		
@@ -108,6 +108,8 @@
 <link href="../include/main.css" rel="stylesheet" type="text/css" />
 <link href="../include/vnrtrac.css" rel="stylesheet" type="text/css" />
 </head>
+<script src="../include/jquery.js"></script>
+<script src="../include/jquery-compat.js"></script>
 <script src="vaddresschk.js"></script>
 <script type="text/javascript">
 
@@ -1723,7 +1725,7 @@ $quer3=mysql_query("SELECT p_id, business_name FROM tbl_partymaser  where classi
 		<?php echo $noticia['business_name'];?>
 		<?php } ?>
 	</select>&nbsp;<font color="#FF0000">*</font>&nbsp;</td>
-	<td align="right"  valign="middle" class="tblheading">D.C./Inv. No. &nbsp;</td>
+	<td align="right"  valign="middle" class="tblheading">D.C./Inv. No.ï¿½&nbsp;</td>
     <td align="left"  valign="middle" class="tbltext" colspan="3">&nbsp;<input name="txtdcno" type="text" size="20" class="tbltext" tabindex=""    maxlength="20" onchange="vendorchk();"/>&nbsp;<font color="#FF0000">*</font>&nbsp;</td>
 
            </tr>
@@ -1834,7 +1836,7 @@ $classqry=mysql_query("select classification_id, classification from tbl_classif
 ?>
  <tr class="Dark" height="25">
            <td width="226"  align="right"  valign="middle" class="tblheading">&nbsp;Classification&nbsp;</td>
-           <td align="left"  valign="middle" colspan="3" class="tbltext">&nbsp;<select class="tbltext" name="txtclass" style="width:230px;" onchange="modetchk(this.value)">
+           <td align="left"  valign="middle" colspan="3" class="tbltext">&nbsp;<select class="tbltext" name="txtclass" style="width:230px;" onchange="modetchk(this.value); getClassificationType(this.value);">
 <option value="" selected>--Select Classification--</option>
 	<?php while($noticia_class = mysql_fetch_array($classqry)) { ?>
 		<option value="<?php echo $noticia_class['classification_id'];?>" />   
@@ -1863,7 +1865,7 @@ $itemqry=mysql_query("select items_id, stores_item from tbl_stores order by stor
 
  <tr class="Light" height="30">
 <td align="right"  valign="middle" class="tblheading">UPS Good&nbsp;</td>
-<td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtupsg" type="text" size="10" class="tbltext" tabindex=""   maxlength="6" onkeypress="return isNumberKey(event)" onchange="upschk(this.value);"/>&nbsp;<font color="#FF0000">*</font>&nbsp;</td>
+<td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtupsg" type="text" size="10" class="tbltext" tabindex=""   maxlength="6" onkeypress="return isNumberKey(event)" onchange="upschk(this.value); getClassificationType(document.querySelector('select[name=txtclass]').value);"/>&nbsp;<font color="#FF0000">*</font>&nbsp;<a href="javascript:void(0);" id="generateQR" style="display:none; color:#0066CC; text-decoration:underline; cursor:pointer; font-weight:bold; margin-left:10px;" onclick="openGenerateQR(); return false;">Generate QR</a></td>
 
 <td align="right"  valign="middle" class="tblheading">Quantity Good&nbsp;</td>
 <td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtqtyg" type="text" size="10" class="tbltext" tabindex="" maxlength="7" onkeypress="return isNumberKey(event)" onchange="qtychk(this.value);">&nbsp;<font color="#FF0000">*</font>&nbsp;</td>

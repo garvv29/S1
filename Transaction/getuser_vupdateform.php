@@ -365,6 +365,12 @@ $sql_sub="insert into tblarrival_sub (arrival_id, classification_id, item_id, qt
 if(mysql_query($sql_sub) or die(mysql_error()))
 {
 $subid=mysql_insert_id();
+
+// UPDATE draft QR codes to link them with actual arrival_id and arrsub_id
+// Only update NEW QRs that have arrsub_id=0 (not yet linked/auto-fetched)
+$sql_update_qr = "UPDATE tbl_qr_codes SET arrival_id='$mainid', arrsub_id='$subid', linked_status='linked' WHERE linked_status='draft' AND arrsub_id=0 AND classification_id='$n' AND item_id='$o' AND created_by='" . mysql_real_escape_string($username) . "'";
+mysql_query($sql_update_qr) or die(mysql_error());
+
 if($god1==1)
 {
 $sql_sub_sub="insert into tblarr_sloc (arr_type, arr_tr_id, arr_id, classification_id, item_id, whid, binid, subbin, qty_good, ups_good, qty_damage, ups_damage, rowid) values('Vendor', '$mainid', '$subid', '$n', '$o', '$y', '$z', '$a1', '$b1', '$c1', '0', '0', '$rowid1')";
@@ -408,6 +414,12 @@ $sql_sub="insert into tblarrival_sub (arrival_id, classification_id, item_id, qt
 if(mysql_query($sql_sub) or die(mysql_error()))
 {
 $subid=mysql_insert_id();
+
+// UPDATE draft QR codes to link them with actual arrival_id and arrsub_id
+// Only update NEW QRs that have arrsub_id=0 (not yet linked/auto-fetched)
+$sql_update_qr = "UPDATE tbl_qr_codes SET arrival_id='$mainid', arrsub_id='$subid', linked_status='linked' WHERE linked_status='draft' AND arrsub_id=0 AND classification_id='$n' AND item_id='$o' AND created_by='" . mysql_real_escape_string($username) . "'";
+mysql_query($sql_update_qr) or die(mysql_error());
+
 if($god1==1)
 {
 $sql_sub_sub="insert into tblarr_sloc (arr_type, arr_tr_id, arr_id, classification_id, item_id, whid, binid, subbin, qty_good, ups_good, qty_damage, ups_damage, rowid) values('Vendor', '$mainid', '$subid', '$n', '$o', '$y', '$z', '$a1', '$b1', '$c1', '0', '0', '$rowid1')";
@@ -440,6 +452,10 @@ mysql_query($sql_sub_sub) or die(mysql_error());
 }
 	
 ?>
+<!-- Hidden fields to pass IDs back to main form -->
+<input type="hidden" id="response_arrival_id" value="<?php echo $z1; ?>" />
+<input type="hidden" id="response_arrsub_id" value="<?php echo (isset($subtid) && $subtid > 0) ? $subtid : 0; ?>" />
+
 <table align="center" border="1" cellspacing="0" cellpadding="0" width="850" bordercolor="#4ea1e1" style="border-collapse:collapse">
 <?php
 $tid=$z1;
@@ -650,7 +666,7 @@ $classqry=mysql_query("select classification_id, classification from tbl_classif
 ?>
  <tr class="Dark" height="25">
            <td width="226"  align="right"  valign="middle" class="tblheading">&nbsp;Classification&nbsp;</td>
-           <td align="left"  valign="middle" colspan="3" class="tbltext">&nbsp;<select class="tbltext" name="txtclass" style="width:230px;" onchange="modetchk(this.value)">
+           <td align="left"  valign="middle" colspan="3" class="tbltext">&nbsp;<select class="tbltext" name="txtclass" style="width:230px;" onchange="modetchk(this.value); getClassificationType(this.value);">
 <option value="" selected>--Select Classification--</option>
 	<?php while($noticia_class = mysql_fetch_array($classqry)) { ?>
 		<option value="<?php echo $noticia_class['classification_id'];?>" />   
@@ -679,7 +695,7 @@ $itemqry=mysql_query("select items_id, stores_item from tbl_stores order by stor
 
  <tr class="Light" height="30">
 <td align="right"  valign="middle" class="tblheading">UPS Good&nbsp;</td>
-<td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtupsg" type="text" size="10" class="tbltext" tabindex=""   maxlength="6" onkeypress="return isNumberKey(event)" onchange="upschk(this.value);"/>&nbsp;<font color="#FF0000">*</font>&nbsp;</td>
+<td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtupsg" type="text" size="10" class="tbltext" tabindex=""   maxlength="6" onkeypress="return isNumberKey(event)" onchange="upschk(this.value); getClassificationType(document.querySelector('select[name=txtclass]').value);"/>&nbsp;<font color="#FF0000">*</font>&nbsp;<a href="javascript:void(0);" id="generateQR" style="display:none; color:#0066CC; text-decoration:underline; cursor:pointer; font-weight:bold; margin-left:10px;" onclick="openGenerateQR(); return false;">Generate QR</a></td>
 
 <td align="right"  valign="middle" class="tblheading">Quantity Good&nbsp;</td>
 <td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtqtyg" type="text" size="10" class="tbltext" tabindex="" maxlength="7" onkeypress="return isNumberKey(event)" onchange="qtychk(this.value);">&nbsp;<font color="#FF0000">*</font>&nbsp;</td>

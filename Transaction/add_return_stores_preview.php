@@ -392,6 +392,7 @@ $arrival_id=$row_tbl['arrival_id'];
 	    <td align="center" colspan="4" >
 		<form name="frmaddDepartment" method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>" > 
 	 <input name="frm_action" value="submit" type="hidden"> 
+	 <input type="hidden" name="p_id" value="<?php echo $pid?>" />
 	<input type="hidden" name="logid" value="<?php echo $logid?>" />
 		<input type="hidden" name="txtitem" value="<?php echo $pid?>" />
 	 <input name="code" value="<?php echo $code;?>" type="hidden">

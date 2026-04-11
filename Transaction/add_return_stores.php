@@ -24,7 +24,7 @@
 	//$logid="OP1";
 	//$lgnid="OP1";
 	
-	if(isset($_POST['frm_action'])=='submit')
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{
 		$p_id=trim($_POST['maintrid']);
 		$code=trim($_POST['code']);
@@ -1243,19 +1243,23 @@ function rtnbychk(rtnbyval)
 
 function mySubmit()
 {	
+	console.log('mySubmit() called');
 	if(document.frmaddDepartment.date.value=="00-00-0000" || document.frmaddDepartment.date.value=="")
 	{
+		console.log('Date validation failed');
 		alert("Please Check Transaction Date");
 		//document.frmaddDepartment.txtcla.focus();
 		return false;
 	}
 	else if(document.frmaddDepartment.txtparty.value=="")
 	{
+		console.log('Party validation failed');
 		alert("Please select Party Name");
 		return false;
 	}
 	else if(document.frmaddDepartment.txtstage.value=="")
 	{
+		console.log('Stage validation failed');
 		alert("Please select Return from Stage");
 		//document.frmaddDepartment.txtstage.focus();
 		return false;
@@ -1263,17 +1267,20 @@ function mySubmit()
 	
 	else if(document.frmaddDepartment.txtrd.value=="" && document.frmaddDepartment.txtrbd.value=="")
 	{
+		console.log('Return by ID validation failed');
 		alert("Please select Return by ID or Specify the Name");
 		//document.frmaddDepartment.txtstage.focus();
 		return false;
 	}
 	else if(parseInt(document.frmaddDepartment.maintrid.value)==0 || parseInt(document.frmaddDepartment.maintrid.value)=="0")
 	{
+		console.log('maintrid validation failed');
 		alert("You have not Posted data. Please post & then click Preview");
 		return false;
 	}
 	else
 	{
+	console.log('Form validation passed - submitting form');
 	return true;
 	}
 }
@@ -1374,7 +1381,8 @@ function mySubmit()
 	    <td align="center" colspan="4" >
 		<form id="mainform" name="frmaddDepartment" method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>" onSubmit="return mySubmit();" > 
 	 <input name="frm_action" value="submit" type="hidden"> 
-	 <input name="code" value="<?php echo $code;?>" type="hidden"> 
+	 <input name="code" value="<?php echo $code;?>" type="hidden">
+	 <input name="p_id" value="0" type="hidden"> 
 	<!-- <input name="twh1" value="0" type="hidden"> 
 	 <input name="twh2" value="0" type="hidden"> 
 	 <input name="twh3" value="0" type="hidden"> 
@@ -1508,7 +1516,7 @@ $classqry=mysql_query("select classification_id, classification from tbl_classif
 ?>
  <tr class="Dark" height="25">
            <td width="226"  align="right"  valign="middle" class="tblheading">&nbsp;Classification&nbsp;</td>
-           <td align="left"  valign="middle" colspan="3" class="tbltext">&nbsp;<select class="tbltext" name="txtclass" style="width:230px;" onchange="modetchk(this.value)">
+           <td align="left"  valign="middle" colspan="3" class="tbltext">&nbsp;<select class="tbltext" name="txtclass" style="width:230px;" onchange="modetchk(this.value); getClassificationType(this.value);">
 <option value="" selected>--Select Classification--</option>
 	<?php while($noticia_class = mysql_fetch_array($classqry)) { ?>
 		<option value="<?php echo $noticia_class['classification_id'];?>" />   
@@ -1530,7 +1538,7 @@ $itemqry=mysql_query("select items_id, stores_item from tbl_stores order by stor
 <input type="hidden" name="itmdchk" value="" />
  <tr class="Light" height="30">
 <td align="right"  valign="middle" class="tblheading">UPS Good&nbsp;</td>
-<td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtupsg" type="text" size="10" class="tbltext" tabindex=""   maxlength="6" onkeypress="return isNumberKey(event)" onchange="upschk(this.value);"/>&nbsp;<font color="#FF0000">*</font>&nbsp;</td>
+<td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtupsg" type="text" size="10" class="tbltext" tabindex=""   maxlength="6" onkeypress="return isNumberKey(event)" onchange="upschk(this.value); getClassificationType(document.querySelector('select[name=txtclass]').value); checkGenerateQRVisibility();"/>&nbsp;<font color="#FF0000">*</font>&nbsp;<a href="javascript:void(0);" id="generateQR" style="display:none; color:#0066CC; text-decoration:underline; cursor:pointer; font-weight:bold; margin-left:10px;" onclick="openGenerateQR(); return false;">Generate QR</a></td>
 
 <td align="right"  valign="middle" class="tblheading">Quantity Good&nbsp;</td>
 <td align="left"  valign="middle" class="tbltext">&nbsp;<input name="txtqtyg" type="text" size="10" class="tbltext" tabindex="" maxlength="7" onkeypress="return isNumberKey(event)" onchange="qtychk(this.value);">&nbsp;<font color="#FF0000">*</font>&nbsp;</td>
