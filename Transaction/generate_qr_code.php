@@ -582,9 +582,11 @@ function generateQRCodes() {
 	const saveButtonGroup = document.getElementById('saveButtonGroup');
 	const qrForm = document.getElementById('qrForm');
 	
-	// Clear previous hidden inputs
+	// Clear BOTH previous hidden QR text inputs AND weight inputs from previous generation
 	const oldHiddenInputs = qrForm.querySelectorAll('input[name^="qr_text_"]');
 	oldHiddenInputs.forEach(input => input.remove());
+	const oldWeightInputs = qrForm.querySelectorAll('input[name^="qr_weight_"]');
+	oldWeightInputs.forEach(input => input.remove());
 	
 	qrTableBody.innerHTML = '';
 

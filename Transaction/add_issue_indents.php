@@ -146,6 +146,282 @@ function isNumberKey(evt)
          return true;
       }
 
+// ===== QR SCANNING WORKFLOW FOR ROLL CLASSIFICATION =====
+var currentEditRowData = {
+	classification_id: '',
+	item_id: '',
+	classification_type: ''
+};
+
+var qrScanWindow = null;
+
+// Initialize QR scanning when page loads
+document.addEventListener('DOMContentLoaded', function() {
+	observeEditFormLoaded();
+}, false);
+
+// Also try to initialize immediately (in case DOMContentLoaded already fired)
+if(document.readyState === 'loading') {
+	// Page still loading
+} else {
+	// Page already loaded
+	observeEditFormLoaded();
+}
+
+function observeEditFormLoaded() {
+	var subdiv = document.getElementById('subdiv');
+	if(subdiv) {
+		// Use MutationObserver to detect when form content is injected
+		try {
+			var observer = new MutationObserver(function(mutations) {
+				setTimeout(function() {
+					checkAndSetupQRScanning();
+				}, 300);
+			});
+			
+			observer.observe(subdiv, {
+				childList: true,
+				subtree: true,
+				characterData: false
+			});
+		} catch(e) {
+			console.log('MutationObserver error:', e);
+		}
+	}
+}
+
+function checkAndSetupQRScanning() {
+	var classField = document.getElementsByName('classid');
+	var itemField = document.getElementsByName('itemid');
+	
+	console.log('QR Debug: classField.length =', classField.length, ', itemField.length =', itemField.length);
+	
+	if(classField.length > 0 && itemField.length > 0) {
+		var classId = classField[classField.length - 1].value;
+		var itemId = itemField[itemField.length - 1].value;
+		
+		console.log('QR Debug: classId =', classId, ', itemId =', itemId);
+		
+		if(classId && itemId && classId !== '' && itemId !== '') {
+			currentEditRowData.classification_id = classId;
+			currentEditRowData.item_id = itemId;
+			
+			console.log('QR Debug: Checking classification type for classId', classId);
+			checkClassificationTypeForQR(classId);
+		}
+	}
+}
+
+function checkClassificationTypeForQR(classificationId) {
+	var xhr = new XMLHttpRequest();
+	
+	xhr.onreadystatechange = function() {
+		if(xhr.readyState === 4) {
+			if(xhr.status === 200) {
+				var classType = xhr.responseText.trim();
+				console.log('QR Debug: Classification type received:', classType);
+				currentEditRowData.classification_type = classType;
+				
+				if(classType === 'Roll') {
+					console.log('QR Debug: Classification is Roll! Setting up UI...');
+					setupQRScanningUI();
+				} else {
+					console.log('QR Debug: Classification is NOT Roll, hiding QR UI');
+					removeQRScanningUI();
+				}
+			} else {
+				console.log('QR Debug: AJAX error status:', xhr.status);
+			}
+		}
+	};
+	
+	xhr.open('GET', 'getuser_issueindent_classtype.php?classification_id=' + encodeURIComponent(classificationId), true);
+	xhr.send(null);
+}
+
+function setupQRScanningUI() {
+	// We need to find the TABLE that CONTAINS issueups fields
+	// There are multiple tables - first one has header info (txtdate, indentno, etc)
+	// Second one has issueups_1, issueups_2, etc. - THAT'S the one we need!
+	
+	console.log('QR Debug: Looking for table with issueups fields...');
+	
+	var allTables = document.querySelectorAll('table[border="1"]');
+	console.log('QR Debug: Found', allTables.length, 'tables with border=1');
+	
+	var formTable = null;
+	
+	// Find the table that actually has issueups fields
+	for(var t = 0; t < allTables.length; t++) {
+		var issueUpsFieldsInTable = allTables[t].querySelectorAll('input[name^="issueups_"]');
+		console.log('QR Debug: Table', t, 'has', issueUpsFieldsInTable.length, 'issueups fields');
+		
+		if(issueUpsFieldsInTable.length > 0) {
+			formTable = allTables[t];
+			console.log('QR Debug: FOUND THE RIGHT TABLE - Table index:', t);
+			break;
+		}
+	}
+	
+	if(formTable) {
+		console.log('QR Debug: Form table found, attaching event listeners...');
+		
+		// List all fields in this table for debugging
+		var allInputsInTable = formTable.querySelectorAll('input[type="text"]');
+		console.log('QR Debug: Total text input fields in DATA table:', allInputsInTable.length);
+		for(var i = 0; i < allInputsInTable.length && i < 15; i++) {
+			console.log('QR Debug: Field', i, ':', allInputsInTable[i].name, '=', allInputsInTable[i].value);
+		}
+		
+		// Listen for ALL input changes within the table
+		formTable.addEventListener('change', function(e) {
+			console.log('QR Debug: CHANGE EVENT on:', e.target.name, 'value:', e.target.value);
+			if(e.target && e.target.name && e.target.name.match(/^issueups_/)) {
+				console.log('QR Debug: MATCHED issueups field:', e.target.name);
+				handleQRUpsFieldChange(e.target);
+			}
+		}, false);
+		
+		formTable.addEventListener('keyup', function(e) {
+			if(e.target && e.target.name && e.target.name.match(/^issueups_/)) {
+				console.log('QR Debug: KEYUP on issueups field:', e.target.name, 'value:', e.target.value);
+				handleQRUpsFieldChange(e.target);
+			}
+		}, false);
+		
+		console.log('QR Debug: Event delegation setup complete - listening to correct table');
+	} else {
+		console.log('QR Debug: ERROR - NO table found with issueups fields!');
+	}
+}
+
+function handleQRUpsFieldChange(upsField) {
+	console.log('QR Debug: *** handleQRUpsFieldChange CALLED ***');
+	
+	var upsValue = parseInt(upsField.value) || 0;
+	var fieldName = upsField.name;
+	
+	console.log('QR Debug: handleQRUpsFieldChange() for', fieldName, 'value:', upsValue);
+	console.log('QR Debug: currentEditRowData.classification_type =', currentEditRowData.classification_type);
+	
+	// Get existing button or create new one
+	var buttonId = 'qr-scan-button-' + fieldName;
+	var existingButton = document.getElementById(buttonId);
+	
+	if(upsValue > 0 && currentEditRowData.classification_type === 'Roll') {
+		console.log('QR Debug: Creating button - UPS > 0 AND classification is Roll');
+		if(!existingButton) {
+			// Create button for this field
+			var buttonContainer = document.createElement('div');
+			buttonContainer.id = 'qr-button-container-' + fieldName;
+			buttonContainer.style.marginTop = '5px';
+			buttonContainer.style.padding = '3px';
+			buttonContainer.style.backgroundColor = '#ffffcc';
+			buttonContainer.style.border = '1px solid #cccc00';
+			buttonContainer.style.borderRadius = '3px';
+			buttonContainer.innerHTML = '<a id="' + buttonId + '" href="javascript:openQRScanInterface();" style="color: #0066cc; text-decoration: underline; cursor: pointer; font-weight: bold; font-size: 11px;">â†’ Scan QR</a>';
+			
+			upsField.parentNode.appendChild(buttonContainer);
+			console.log('QR Debug: Button created for', fieldName);
+		}
+	} else {
+		console.log('QR Debug: NOT creating button - UPS=' + upsValue + ', classification=' + currentEditRowData.classification_type);
+		if(existingButton) {
+			existingButton.parentNode.parentNode.style.display = 'none';
+			console.log('QR Debug: Button hidden for', fieldName);
+		}
+	}
+}
+
+function removeQRScanningUI() {
+	console.log('QR Debug: removeQRScanningUI() called');
+}
+
+function openQRScanInterface() {
+	if(!currentEditRowData.classification_id || !currentEditRowData.item_id) {
+		alert('Classification and Item information not found. Please refresh and try again.');
+		return false;
+	}
+	
+	// Find the last issueups field that has focus or value
+	var upsFields = document.querySelectorAll('input[name^="issueups_"]');
+	var ups = 0;
+	
+	if(upsFields.length > 0) {
+		// Get the last one (most recent row)
+		ups = parseInt(upsFields[upsFields.length - 1].value) || 0;
+	}
+	
+	if(ups <= 0) {
+		alert('Please enter UPS (Units) value first.');
+		return false;
+	}
+	
+	console.log('QR Debug: Opening QR scan with classification_id:', currentEditRowData.classification_id, ', item_id:', currentEditRowData.item_id, ', ups:', ups);
+	
+	var url = 'scan_qrcode_indent.php?classification_id=' + currentEditRowData.classification_id 
+		      + '&item_id=' + currentEditRowData.item_id 
+		      + '&ups=' + ups 
+		      + '&timestamp=' + Date.now();
+	
+	qrScanWindow = window.open(url, 'QRScan_' + Date.now(), 'width=950,height=750,scrollbars=yes,resizable=yes');
+	
+	if(window.focus) {
+		qrScanWindow.focus();
+	}
+	
+	// Monitor window close and check for sessionStorage data
+	var closeCheckInterval = setInterval(function() {
+		if(qrScanWindow.closed) {
+			clearInterval(closeCheckInterval);
+			
+			// Check for stored weight in sessionStorage
+			try {
+				var storedWeight = sessionStorage.getItem('qr_total_weight_indent');
+				var timestamp = sessionStorage.getItem('qr_total_weight_timestamp');
+				
+				if(storedWeight && timestamp) {
+					// Verify timestamp is recent (within 5 seconds)
+					if((Date.now() - parseInt(timestamp)) < 5000) {
+						setQRTotalWeight(parseFloat(storedWeight));
+						sessionStorage.removeItem('qr_total_weight_indent');
+						sessionStorage.removeItem('qr_total_weight_timestamp');
+					}
+				}
+			} catch(e) {
+				console.log('SessionStorage error:', e);
+			}
+		}
+	}, 500);
+	
+	return false;
+}
+
+function setQRTotalWeight(totalWeight) {
+	// Find the issueqty field for the current row and set it
+	// Need to find which row was being edited (the last one with focus)
+	
+	var qtyFields = document.querySelectorAll('input[name^="issueqty_"]');
+	
+	if(qtyFields.length > 0) {
+		// Get the last issueqty field (most recent row)
+		var lastQtyField = qtyFields[qtyFields.length - 1];
+		lastQtyField.value = totalWeight;
+		lastQtyField.readOnly = true;
+		lastQtyField.style.backgroundColor = '#CCCCCC';
+		
+		console.log('QR Debug: Quantity field populated:', lastQtyField.name, '=', totalWeight);
+		
+		// Show success feedback
+		alert('QR codes scanned successfully!\n\nTotal Weight: ' + totalWeight + '\n\nQuantity field has been populated and locked.');
+	} else {
+		console.log('QR Debug: No issueqty fields found');
+		alert('Could not populate quantity field. Total Weight: ' + totalWeight);
+	}
+}
+
+// ===== END QR SCANNING WORKFLOW =====
+
 
 function formPost(top_element){
 	var inputs=top_element.getElementsByTagName('*');
@@ -639,7 +915,7 @@ return true;
 
 	
 	 <tr class="Dark" height="30">
-	 <td width="205" align="right" valign="middle" class="tblheading">Transaction ID   </td>
+	 <td width="205" align="right" valign="middle" class="tblheading">Transaction ID ï¿½ï¿½</td>
 <td width="215"  align="left" valign="middle" class="tbltext">&nbsp;<?php echo $code1?></td>
 
 <td width="193" align="right" valign="middle" class="tblheading">&nbsp;Date&nbsp;</td>
@@ -654,7 +930,7 @@ return true;
 <td width="227" colspan="3" align="left" valign="middle" class="tbltext">&nbsp;<input name="raisedby" type="text" size="15" class="tbltext" tabindex="" readonly="true" style="background-color:#CCCCCC" value="<?php echo $resetresult['name'];?>" />&nbsp; </td>
 </tr>
  <tr class="Dark" height="30">
-<td width="205" align="right" valign="middle" class="tblheading">&nbsp;Indent Date &nbsp;</td>
+<td width="205" align="right" valign="middle" class="tblheading">&nbsp;Indentï¿½Dateï¿½&nbsp;</td>
 <td width="215"  align="left" valign="middle" class="tbltext" colspan="3">&nbsp;<input name="indentdate" type="text" size="10" class="tbltext" tabindex="" readonly="true" style="background-color:#CCCCCC" value="<?php echo $tdate;?>"/></td>
 <input name="issuedate" type="hidden" size="10" class="tbltext" tabindex="0"  readonly="true" style="background-color:#CCCCCC" value="<?php echo date("d-m-Y");?>"/>
 </tr>

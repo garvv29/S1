@@ -75,13 +75,17 @@
 	$txtpname = $_REQUEST['txtpname'];
 	}
 
+// Only process and update when form is submitted (POST), not on initial page load (GET)
+if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
+{
 $sql_main="update tblarrival set yearcode='$yearid_id',dcno='$txtdcno', party_id='$txtcla', porefno='$txtporn', tmode='$txt11', trans_name='$txttname', trans_lorryrepno='$txtlrn', trans_vehno='$txtvn', trans_paymode='$txt14', courier_name='$txtcname', docket_no='$txtdc', pname_byhand='$txtpname', remarks='$remarks' where arrival_id = '$pid'";
 
 $a123456=mysql_query($sql_main) or die(mysql_error());
 
 
 	
-	if(isset($_POST['frm_action'])=='submit')
+
+	if(isset($_REQUEST['p_id']))
 	{
 	
 	$sql_arr=mysql_query("select * from tblarrival where arrival_id='".$pid."'") or die(mysql_error());
@@ -237,6 +241,63 @@ $cntg=0;
 		}	
 	}
 }
+
+// ===== QR CODE UPDATE =====
+// Update all QR codes related to this arrival to FINAL status
+$error_messages = array();
+
+// Start transaction
+mysql_query("START TRANSACTION");
+
+try {
+    // Fetch all unique sub-items in this arrival
+    $sql_get_subitems = "SELECT DISTINCT arrsub_id, classification_id, item_id FROM tblarrival_sub WHERE arrival_id = '$pid'";
+    
+    $res_subitems = mysql_query($sql_get_subitems) or die(mysql_error());
+    
+    while($row_subitem = mysql_fetch_array($res_subitems)) {
+        $arrsub_id = $row_subitem['arrsub_id'];
+        $classification_id = $row_subitem['classification_id'];
+        $item_id = $row_subitem['item_id'];
+        
+        // Check if QR codes exist for this combination
+        $sql_count_qr = "SELECT COUNT(*) as qr_count FROM tbl_qr_codes WHERE arrival_id = '$pid' AND arrsub_id = '$arrsub_id' AND classification_id = '$classification_id' AND item_id = '$item_id' AND finalsubmit = 0";
+        
+        $res_count = mysql_query($sql_count_qr) or die(mysql_error());
+        $row_count = mysql_fetch_array($res_count);
+        $qr_count = $row_count['qr_count'];
+        
+        // Only update if QR codes exist in draft status
+        if($qr_count > 0) {
+            // Update QR codes to FINAL status
+            $sql_update_qr = "UPDATE tbl_qr_codes SET finalsubmit = 1, linked_status = 'linked', used = 0 WHERE arrival_id = '$pid' AND arrsub_id = '$arrsub_id' AND classification_id = '$classification_id' AND item_id = '$item_id' AND finalsubmit = 0";
+            
+            if(!mysql_query($sql_update_qr)) {
+                $error_messages[] = "QR update failed for arrsub_id=$arrsub_id: " . mysql_error();
+            }
+            else {
+                error_log("Final Submit: QR codes updated for arrival_id=$pid, arrsub_id=$arrsub_id, classification_id=$classification_id, item_id=$item_id");
+            }
+        }
+    }
+    
+    // Commit transaction if no errors
+    if(count($error_messages) == 0) {
+        mysql_query("COMMIT");
+    }
+    else {
+        mysql_query("ROLLBACK");
+        foreach($error_messages as $msg) {
+            error_log("QR Update Error: " . $msg);
+        }
+    }
+    
+} catch (Exception $e) {
+    mysql_query("ROLLBACK");
+    error_log("QR Update Exception: " . $e->getMessage());
+}
+// ===== END QR CODE UPDATE =====
+
 	$sql_code="SELECT MAX(arr_code) FROM tblarrival where yearcode='$yearid_id'and  arrival_type='Vendor' ORDER BY arr_code DESC";
 	$res_code=mysql_query($sql_code)or die(mysql_error());
 		
@@ -272,6 +333,8 @@ $cntg=0;
 	
 		echo "<script>window.location='select_arrivalop.php?p_id=$pid'</script>";	
 	}
+}
+// End of POST submit processing
 
 //$a="c";
 	//$a="c";
@@ -404,19 +467,31 @@ function formPost(top_element){
 
 function openslocpopprint()
 {
-if(document.frmaddDepartment.txtitem.value!="")
-{
-var itm=document.frmaddDepartment.txtitem.value;
-var remarks=document.frmaddDepartment.remarks.value
-winHandle=window.open('item_sloc_details_print.php?itmid='+itm+'&remarks='+remarks,'WelCome','top=170,left=180,width=820,height=350,scrollbars=yes');
-if(winHandle==null){
-alert("While Launching New Window...\nYour browser maybe blocking up Popup windows. \n\n  Please check your Popup Blocker Settings or ..\n Please hold Ctrl Key and Click on link to open new Browser"); }
-}
-else
-{
-alert("Please Select Item first.");
-document.frmaddDepartment.txtitem.focus();
-}
+	// Handle both add page (has txtitem) and preview page (doesn't have txtitem)
+	var itm = "";
+	if(document.frmaddDepartment.txtitem && document.frmaddDepartment.txtitem.value)
+	{
+		itm = document.frmaddDepartment.txtitem.value;
+	}
+	else if(document.frmaddDepartment.arrival_id_print && document.frmaddDepartment.arrival_id_print.value)
+	{
+		// Preview page - pass arrival_id instead
+		itm = "arrival_" + document.frmaddDepartment.arrival_id_print.value;
+	}
+	
+	if(itm != "")
+	{
+		var remarks = document.frmaddDepartment.remarks.value ? document.frmaddDepartment.remarks.value : "";
+		winHandle=window.open('item_sloc_details_print.php?itmid='+itm+'&remarks='+remarks,'WelCome','top=170,left=180,width=820,height=350,scrollbars=yes');
+		if(winHandle==null)
+		{
+			alert("While Launching New Window...\nYour browser maybe blocking up Popup windows. \n\n  Please check your Popup Blocker Settings or ..\n Please hold Ctrl Key and Click on link to open new Browser"); 
+		}
+	}
+	else
+	{
+		alert("Unable to open print preview. Please try again.");
+	}
 }
 
 
@@ -431,7 +506,8 @@ function mySubmit()
 	}
 	else if(confirm('Have You completed the Transaction?\nDo You wish to Final Submit it?')==true)
 	{
-	return true;	 
+		document.frmaddDepartment.submit();
+		return true;	 
 	}
 	else
 	{
@@ -552,6 +628,20 @@ $arrival_id=$row_tbl['arrival_id'];
 	 	<input type="hidden" name="logid" value="<?php echo $logid?>" />
 		<input type="hidden" name="remarks" value="<?php echo $remarks?>" />
 		<input type="hidden" name="date" value="<?php echo $tdate?>" />
+		<!-- Added missing vendor and transaction detail hidden fields -->
+		<input type="hidden" name="txtcla" value="<?php echo isset($row_tbl['party_id']) ? $row_tbl['party_id'] : ''; ?>" />
+		<input type="hidden" name="txtdcno" value="<?php echo isset($row_tbl['dcno']) ? $row_tbl['dcno'] : ''; ?>" />
+		<!-- Hidden field for print preview functionality -->
+		<input type="hidden" name="arrival_id_print" value="<?php echo isset($arrival_id) ? $arrival_id : $pid; ?>" />
+		<input type="hidden" name="txtporn" value="<?php echo isset($row_tbl['porefno']) ? $row_tbl['porefno'] : ''; ?>" />
+		<input type="hidden" name="txt11" value="<?php echo isset($row_tbl['tmode']) ? $row_tbl['tmode'] : ''; ?>" />
+		<input type="hidden" name="txttname" value="<?php echo isset($row_tbl['trans_name']) ? $row_tbl['trans_name'] : ''; ?>" />
+		<input type="hidden" name="txtlrn" value="<?php echo isset($row_tbl['trans_lorryrepno']) ? $row_tbl['trans_lorryrepno'] : ''; ?>" />
+		<input type="hidden" name="txtvn" value="<?php echo isset($row_tbl['trans_vehno']) ? $row_tbl['trans_vehno'] : ''; ?>" />
+		<input type="hidden" name="txt14" value="<?php echo isset($row_tbl['trans_paymode']) ? $row_tbl['trans_paymode'] : ''; ?>" />
+		<input type="hidden" name="txtcname" value="<?php echo isset($row_tbl['courier_name']) ? $row_tbl['courier_name'] : ''; ?>" />
+		<input type="hidden" name="txtdc" value="<?php echo isset($row_tbl['docket_no']) ? $row_tbl['docket_no'] : ''; ?>" />
+		<input type="hidden" name="txtpname" value="<?php echo isset($row_tbl['pname_byhand']) ? $row_tbl['pname_byhand'] : ''; ?>" />
 		</br>
 
 
@@ -823,7 +913,7 @@ $srno++;
 </table>
 <table align="center" width="850" cellpadding="5" cellspacing="5" border="0" >
 <tr >
-<td valign="top" align="right"><a href="edit_arrival_vendor.php?p_id=<?php echo $pid;?>"><img src="../images/edit.gif" border="0"style="display:inline;cursor:hand;" /></a>&nbsp;&nbsp;<a href="Javascript:void(0)" onclick="openslocpopprint();"><img src="../images/printpreview.gif" border="0"style="display:inline;cursor:hand;" /></a>&nbsp;&nbsp;<input name="Submit" type="image" src="../images/finalsubmit.gif" alt="Submit Value"  border="0" style="display:inline;cursor:hand;" tabindex="" onClick="return mySubmit();">&nbsp;&nbsp;</td>
+<td valign="top" align="right"><a href="edit_arrival_vendor.php?p_id=<?php echo $pid;?>"><img src="../images/edit.gif" border="0"style="display:inline;cursor:hand;" /></a>&nbsp;&nbsp;<a href="Javascript:void(0)" onclick="openslocpopprint();return false;"><img src="../images/printpreview.gif" border="0"style="display:inline;cursor:hand;" /></a>&nbsp;&nbsp;<input name="Submit" type="image" src="../images/finalsubmit.gif" alt="Submit Value"  border="0" style="display:inline;cursor:hand;" tabindex="" onClick="return mySubmit();">&nbsp;&nbsp;</td>
 </tr>
 </table>
 </td><td width="30"></td>

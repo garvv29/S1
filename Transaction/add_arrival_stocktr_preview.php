@@ -77,7 +77,7 @@ $a123456=mysql_query($sql_main) or die(mysql_error());
 
 
 	
-	if(isset($_POST['frm_action'])=='submit')
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{
 		 $pid=trim($_POST['txtitem']);
 		 
@@ -200,7 +200,62 @@ $cntg=0;
 	}
 }
 
-		
+// ===== QR CODE UPDATE =====
+// Update all QR codes related to this arrival to FINAL status
+$error_messages = array();
+
+// Start transaction
+mysql_query("START TRANSACTION");
+
+try {
+    // Fetch all unique sub-items in this arrival
+    $sql_get_subitems = "SELECT DISTINCT arrsub_id, classification_id, item_id FROM tblarrival_sub WHERE arrival_id = '$pid'";
+    
+    $res_subitems = mysql_query($sql_get_subitems) or die(mysql_error());
+    
+    while($row_subitem = mysql_fetch_array($res_subitems)) {
+        $arrsub_id = $row_subitem['arrsub_id'];
+        $classification_id = $row_subitem['classification_id'];
+        $item_id = $row_subitem['item_id'];
+        
+        // Check if QR codes exist for this combination
+        $sql_count_qr = "SELECT COUNT(*) as qr_count FROM tbl_qr_codes WHERE arrival_id = '$pid' AND arrsub_id = '$arrsub_id' AND classification_id = '$classification_id' AND item_id = '$item_id' AND finalsubmit = 0";
+        
+        $res_count = mysql_query($sql_count_qr) or die(mysql_error());
+        $row_count = mysql_fetch_array($res_count);
+        $qr_count = $row_count['qr_count'];
+        
+        // Only update if QR codes exist in draft status
+        if($qr_count > 0) {
+            // Update QR codes to FINAL status
+            $sql_update_qr = "UPDATE tbl_qr_codes SET finalsubmit = 1, linked_status = 'linked', used = 0 WHERE arrival_id = '$pid' AND arrsub_id = '$arrsub_id' AND classification_id = '$classification_id' AND item_id = '$item_id' AND finalsubmit = 0";
+            
+            if(!mysql_query($sql_update_qr)) {
+                $error_messages[] = "QR update failed for arrsub_id=$arrsub_id: " . mysql_error();
+            }
+            else {
+                error_log("Final Submit: QR codes updated for arrival_id=$pid, arrsub_id=$arrsub_id, classification_id=$classification_id, item_id=$item_id");
+            }
+        }
+    }
+    
+    // Commit transaction if no errors
+    if(count($error_messages) == 0) {
+        mysql_query("COMMIT");
+    }
+    else {
+        mysql_query("ROLLBACK");
+        foreach($error_messages as $msg) {
+            error_log("QR Update Error: " . $msg);
+        }
+    }
+    
+} catch (Exception $e) {
+    mysql_query("ROLLBACK");
+    error_log("QR Update Exception: " . $e->getMessage());
+}
+// ===== END QR CODE UPDATE =====
+
 	$sql_code="SELECT MAX(arr_code) FROM tblarrival where yearcode='$yearid_id'and arrival_type='Stocktransfer' ORDER BY arr_code DESC";
 	$res_code=mysql_query($sql_code)or die(mysql_error());
 		
@@ -544,7 +599,7 @@ $arrival_id=$row_tbl['arrival_id'];
 
 <td align="right"  valign="middle" class="tblheading">Stock Transfer from&nbsp;</td>
 <td align="left"  valign="middle" class="tbltext" >&nbsp;<?php echo $row3['business_name'];?></td>
-	<td align="right"  valign="middle" class="tblheading">STN No &nbsp;</td>
+	<td align="right"  valign="middle" class="tblheading">STN Noï¿½&nbsp;</td>
 <td align="left"  valign="middle" class="tbltext">&nbsp;<?php echo $row_tbl['stnno'];?></td>
 
            </tr>

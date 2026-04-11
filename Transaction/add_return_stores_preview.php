@@ -44,11 +44,14 @@
 	$txtrd = $_REQUEST['txtrd'];
 	}
 	
+	// Only process and update when form is submitted (POST), not on initial page load (GET)
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
+	{
 	$sql_main="update tblarrival set arrival_type='Internalreturn', party_id='$partyid', stageret='$txtstage', retid='$txtrd', remarks='$remarks', arr_role='$logid', type='Good' where arrival_id = '$pid'";
 
 	mysql_query($sql_main) or die(mysql_error());
 	
-	if(isset($_POST['frm_action'])=='submit')
+	if(isset($_REQUEST['p_id']))
 	{
 		
 		$sql_arr=mysql_query("select * from tblarrival where arrival_id='".$pid."'") or die(mysql_error());
@@ -169,6 +172,62 @@ $cntg=0;
 	}
 }
 
+// ===== QR CODE UPDATE =====
+// Update all QR codes related to this arrival to FINAL status
+$error_messages = array();
+
+// Start transaction
+mysql_query("START TRANSACTION");
+
+try {
+    // Fetch all unique sub-items in this arrival
+    $sql_get_subitems = "SELECT DISTINCT arrsub_id, classification_id, item_id FROM tblarrival_sub WHERE arrival_id = '$pid'";
+    
+    $res_subitems = mysql_query($sql_get_subitems) or die(mysql_error());
+    
+    while($row_subitem = mysql_fetch_array($res_subitems)) {
+        $arrsub_id = $row_subitem['arrsub_id'];
+        $classification_id = $row_subitem['classification_id'];
+        $item_id = $row_subitem['item_id'];
+        
+        // Check if QR codes exist for this combination
+        $sql_count_qr = "SELECT COUNT(*) as qr_count FROM tbl_qr_codes WHERE arrival_id = '$pid' AND arrsub_id = '$arrsub_id' AND classification_id = '$classification_id' AND item_id = '$item_id' AND finalsubmit = 0";
+        
+        $res_count = mysql_query($sql_count_qr) or die(mysql_error());
+        $row_count = mysql_fetch_array($res_count);
+        $qr_count = $row_count['qr_count'];
+        
+        // Only update if QR codes exist in draft status
+        if($qr_count > 0) {
+            // Update QR codes to FINAL status
+            $sql_update_qr = "UPDATE tbl_qr_codes SET finalsubmit = 1, linked_status = 'linked', used = 0 WHERE arrival_id = '$pid' AND arrsub_id = '$arrsub_id' AND classification_id = '$classification_id' AND item_id = '$item_id' AND finalsubmit = 0";
+            
+            if(!mysql_query($sql_update_qr)) {
+                $error_messages[] = "QR update failed for arrsub_id=$arrsub_id: " . mysql_error();
+            }
+            else {
+                error_log("Final Submit: QR codes updated for arrival_id=$pid, arrsub_id=$arrsub_id, classification_id=$classification_id, item_id=$item_id");
+            }
+        }
+    }
+    
+    // Commit transaction if no errors
+    if(count($error_messages) == 0) {
+        mysql_query("COMMIT");
+    }
+    else {
+        mysql_query("ROLLBACK");
+        foreach($error_messages as $msg) {
+            error_log("QR Update Error: " . $msg);
+        }
+    }
+    
+} catch (Exception $e) {
+    mysql_query("ROLLBACK");
+    error_log("QR Update Exception: " . $e->getMessage());
+}
+// ===== END QR CODE UPDATE =====
+
 $sql_code="SELECT MAX(arr_code) FROM tblarrival where yearcode='$yearid_id' and arrival_type='Internalreturn' ORDER BY arr_code DESC";
 	$res_code=mysql_query($sql_code)or die(mysql_error());
 		
@@ -205,6 +264,8 @@ $sql_code="SELECT MAX(arr_code) FROM tblarrival where yearcode='$yearid_id' and 
 	
 	echo "<script>window.location='select_material_Return.php?p_id=$pid'</script>";	
 	}
+}
+// End of POST submit processing
 
 ?>
 
@@ -282,7 +343,8 @@ function mySubmit()
 	}
 	else if(confirm('Have You completed the Transaction?\nDo You wish to Final Submit it?')==true)
 	{
-	return true;	 
+		document.frmaddDepartment.submit();
+		return true;	 
 	}
 	else
 	{
@@ -396,7 +458,12 @@ $arrival_id=$row_tbl['arrival_id'];
 	<input type="hidden" name="logid" value="<?php echo $logid?>" />
 		<input type="hidden" name="txtitem" value="<?php echo $pid?>" />
 	 <input name="code" value="<?php echo $code;?>" type="hidden">
-	 <input name="date" value="<?php echo $tdate;?>" type="hidden"> 
+	 <input name="date" value="<?php echo $tdate;?>" type="hidden">
+	 <!-- Added missing return stores details fields -->
+	 <input type="hidden" name="partyid" value="<?php echo isset($partyid) ? $partyid : ''; ?>" />
+	 <input type="hidden" name="txtstage" value="<?php echo isset($txtstage) ? $txtstage : ''; ?>" />
+	 <input type="hidden" name="txtrd" value="<?php echo isset($txtrd) ? $txtrd : ''; ?>" />
+	 <input type="hidden" name="remarks" value="<?php echo isset($remarks) ? $remarks : ''; ?>" /> 
 	 <br />
 <table  border="0" cellspacing="0" cellpadding="0" align="center" width="974"  style="border-collapse:collapse">
 <tr>
@@ -632,7 +699,7 @@ $srno++;
 
 <table align="center" width="850" cellpadding="5" cellspacing="5" border="0" >
 <tr >
-<td valign="top" align="right"><a href="edit_return_stores.php?p_id=<?php echo $pid;?>"><img src="../images/edit.gif" border="0"  style="display:inline;cursor:hand;"/></a>&nbsp;&nbsp;<a href="Javascript:void(0)" onclick="openslocpopprint();"><img src="../images/printpreview.gif" border="0"style="display:inline;cursor:hand;" /></a>&nbsp;&nbsp;<input name="Submit" type="image" src="../images/finalsubmit.gif" alt="Submit Value" onClick="return mySubmit();"  border="0" style="display:inline;cursor:hand;">&nbsp;&nbsp;</td>
+<td valign="top" align="right"><a href="edit_return_stores.php?p_id=<?php echo $pid;?>"><img src="../images/edit.gif" border="0"  style="display:inline;cursor:hand;"/></a>&nbsp;&nbsp;<a href="Javascript:void(0)" onclick="openslocpopprint();return false;"><img src="../images/printpreview.gif" border="0"style="display:inline;cursor:hand;" /></a>&nbsp;&nbsp;<input name="Submit" type="image" src="../images/finalsubmit.gif" alt="Submit Value" onClick="return mySubmit();"  border="0" style="display:inline;cursor:hand;">&nbsp;&nbsp;</td>
 </tr>
 </table>
 </td><td width="30"></td>

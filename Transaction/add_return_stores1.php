@@ -21,7 +21,7 @@
 	require_once("../include/connection.php");
 	
 	
-	if(isset($_POST['frm_action'])=='submit')
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{
 		$code=trim($_POST['txtcode']);
 		$date=trim($_POST['date']);

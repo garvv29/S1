@@ -74,7 +74,7 @@
 			else
 			{ $flg2=0;}
 
-	if(isset($_POST['frm_action'])=='submit')
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{
 		$sdate1=trim($_POST['sdate']);
 		$edate1=trim($_POST['edate']);
@@ -356,9 +356,9 @@ $pagination = "";
 		$pagination .= "<div class=\"pagination\" align=\"right\" style=\"width:805px\">";
 		//previous button
 		if ($page > 1) 
-			$pagination.= " <a href=\"$targetpage?page=$prev\">« previous </a> ";
+			$pagination.= " <a href=\"$targetpage?page=$prev\">ï¿½ previous </a> ";
 		else
-			$pagination.= " <span class=\"disabled\">« previous </span> ";	
+			$pagination.= " <span class=\"disabled\">ï¿½ previous </span> ";	
 		
 		//pages	
 		if ($lastpage < 7 + ($adjacents * 2))	//not enough pages to bother breaking it up
@@ -422,9 +422,9 @@ $pagination = "";
 		
 		//next button
 		if ($page < $counter - 1) 
-			$pagination.= " <a href=\"$targetpage?page=$next\"> next »</a> ";
+			$pagination.= " <a href=\"$targetpage?page=$next\"> next ï¿½</a> ";
 		else
-			$pagination.= " <span class=\"disabled\"> next »</span> ";
+			$pagination.= " <span class=\"disabled\"> next ï¿½</span> ";
 		$pagination.= "</div>\n";		
 	}
 	 $srno=($page-1)*$limit+1;

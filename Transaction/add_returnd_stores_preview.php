@@ -44,11 +44,14 @@ require_once("../include/config.php");
 	$txtrd = $_REQUEST['txtrd'];
 	}
 	
+	// Only process and update when form is submitted (POST), not on initial page load (GET)
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
+	{
 	$sql_main="update tblarrival set arrival_type='Internalreturn', party_id='$partyid', stageret='$txtstage', retid='$txtrd', remarks='$remarks', arr_role='$logid', type='Damage' where arrival_id = '$pid'";
 
 	mysql_query($sql_main) or die(mysql_error());
 	
-	if(isset($_POST['frm_action'])=='submit')
+	if(isset($_REQUEST['p_id']))
 	{
 	
 		$sql_arr=mysql_query("select * from tblarrival where arrival_id='".$pid."'") or die(mysql_error());
@@ -208,6 +211,8 @@ $sql_code="SELECT MAX(arr_code) FROM tblarrival where yearcode='$yearid_id'and a
 	
 	echo "<script>window.location='select_material_Returnd.php?p_id=$pid'</script>";	
 	}
+}
+// End of POST submit processing
 
 ?>
 
@@ -260,18 +265,30 @@ window.attachEvent("onload", buildsubmenus_horizontal)
 
 function openslocpopprint()
 {
-if(document.frmaddDepartment.txtitem.value!="")
-{
-var itm=document.frmaddDepartment.txtitem.value;
-winHandle=window.open('intret_damage_details_print.php?itmid='+itm,'WelCome','top=170,left=180,width=820,height=350,scrollbars=yes');
-if(winHandle==null){
-alert("While Launching New Window...\nYour browser maybe blocking up Popup windows. \n\n  Please check your Popup Blocker Settings or ..\n Please hold Ctrl Key and Click on link to open new Browser"); }
-}
-else
-{
-alert("Please Select Item first.");
-document.frmaddDepartment.txtitem.focus();
-}
+	// Handle both add page (has txtitem) and preview page (doesn't have txtitem)
+	var itm = "";
+	if(document.frmaddDepartment.txtitem && document.frmaddDepartment.txtitem.value)
+	{
+		itm = document.frmaddDepartment.txtitem.value;
+	}
+	else if(document.frmaddDepartment.p_id && document.frmaddDepartment.p_id.value)
+	{
+		// Preview page - pass p_id instead
+		itm = "arrival_" + document.frmaddDepartment.p_id.value;
+	}
+	
+	if(itm != "")
+	{
+		winHandle=window.open('intret_damage_details_print.php?itmid='+itm,'WelCome','top=170,left=180,width=820,height=350,scrollbars=yes');
+		if(winHandle==null)
+		{
+			alert("While Launching New Window...\nYour browser maybe blocking up Popup windows. \n\n  Please check your Popup Blocker Settings or ..\n Please hold Ctrl Key and Click on link to open new Browser"); 
+		}
+	}
+	else
+	{
+		alert("Unable to open print preview. Please try again.");
+	}
 }
 
 
@@ -286,6 +303,7 @@ function mySubmit()
 	}
 	else if(confirm('Have You completed the Transaction?\nDo You wish to Final Submit it?')==true)
 	{
+	document.frmaddDepartment.submit();
 	return true;	 
 	}
 	else
@@ -398,9 +416,15 @@ $arrival_id=$row_tbl['arrival_id'];
 		<form name="frmaddDepartment" method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>" > 
 	 <input name="frm_action" value="submit" type="hidden"> 
 	<input type="hidden" name="logid" value="<?php echo $logid?>" />
+	<input type="hidden" name="p_id" value="<?php echo $pid?>" />
 		<input type="hidden" name="txtitem" value="<?php echo $pid?>" />
 	 <input name="code" value="<?php echo $code;?>" type="hidden"> 
-	  <input name="date" value="<?php echo $tdate;?>" type="hidden"> 
+	  <input name="date" value="<?php echo $tdate;?>" type="hidden">
+	  <!-- Added missing internal return form fields -->
+	  <input type="hidden" name="partyid" value="<?php echo isset($row_tbl['party_id']) ? $row_tbl['party_id'] : ''; ?>" />
+	  <input type="hidden" name="remarks" value="<?php echo isset($remarks) ? $remarks : ''; ?>" />
+	  <input type="hidden" name="txtstage" value="<?php echo isset($row_tbl['stageret']) ? $row_tbl['stageret'] : ''; ?>" />
+	  <input type="hidden" name="txtrd" value="<?php echo isset($row_tbl['retid']) ? $row_tbl['retid'] : ''; ?>" /> 
 	 <br />
 
 <table  border="0" cellspacing="0" cellpadding="0" align="center" width="974"  style="border-collapse:collapse">

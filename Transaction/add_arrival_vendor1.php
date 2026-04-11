@@ -89,7 +89,7 @@ while($row_tbl=mysql_fetch_array($sql_tbl))
 	mysql_query($s_sub) or die(mysql_error());	
 		
 		
-	if(isset($_POST['frm_action'])=='submit')
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{
 		$sdate1=trim($_POST['sdate']);
 		$edate1=trim($_POST['edate']);
@@ -208,7 +208,9 @@ function mySubmit()
 	alert("Please select Valid Date Range.");
 	return false;
 	}
-return true;
+	// Explicitly submit the form
+	document.frmaddDept.submit();
+	return true;
 }
 
 </script>
@@ -364,9 +366,9 @@ $pagination = "";
 		$pagination .= "<div class=\"pagination\" align=\"right\" style=\"width:805px\">";
 		//previous button
 		if ($page > 1) 
-			$pagination.= " <a href=\"$targetpage?page=$prev\">« previous </a> ";
+			$pagination.= " <a href=\"$targetpage?page=$prev\">ï¿½ previous </a> ";
 		else
-			$pagination.= " <span class=\"disabled\">« previous </span> ";	
+			$pagination.= " <span class=\"disabled\">ï¿½ previous </span> ";	
 		
 		//pages	
 		if ($lastpage < 7 + ($adjacents * 2))	//not enough pages to bother breaking it up
@@ -430,9 +432,9 @@ $pagination = "";
 		
 		//next button
 		if ($page < $counter - 1) 
-			$pagination.= " <a href=\"$targetpage?page=$next\"> next »</a> ";
+			$pagination.= " <a href=\"$targetpage?page=$next\"> next ï¿½</a> ";
 		else
-			$pagination.= " <span class=\"disabled\"> next »</span> ";
+			$pagination.= " <span class=\"disabled\"> next ï¿½</span> ";
 		$pagination.= "</div>\n";		
 	}
 	 $srno=($page-1)*$limit+1;
@@ -471,7 +473,7 @@ $total_results = mysql_result(mysql_query("SELECT COUNT(*) as Num FROM tblarriva
               <td align="center" valign="middle" class="tblheading">Output</td>
               </tr>
 <?php
-//$srno=1;
+$srno=1;
 if($tot_arr_home > 0)
 {
 while($row_arr_home=mysql_fetch_array($sql_arr_home))
