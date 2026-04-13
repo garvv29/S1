@@ -28,13 +28,14 @@
 	$tid = $_REQUEST['tid'];
 	}
 	
-	if(isset($_POST['frm_action'])=='submit')
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{	
 		$p_id=trim($_POST['trid']);
 		$tid=trim($_POST['tid']);
 		$remarks=trim($_POST['txtremarks']);
+		$raisedby=trim($_POST['raisedby']);
 		$remarks=str_replace("&","and",$remarks);
-		echo "<script>window.location='add_issue_eindents_preview.php?p_id=$p_id&tid=$tid&remarks=$remarks'</script>";	
+		echo "<script>window.location='add_issue_eindents_preview.php?p_id=$p_id&tid=$tid&remarks=$remarks&raisedby=$raisedby'</script>";	
 	}
 	
 $a="TIE";
@@ -791,6 +792,7 @@ if(document.frmaddDept.trid.value==0)
 		alert("You have not Posted any Item. Please post & then click Preview");
 		return false;
 	}
+document.frmaddDept.submit();
 return true;
 }
 	
@@ -907,7 +909,9 @@ return true;
 	$tday=substr($tdate,8,2);
 	$tdate=$tday."-".$tmonth."-".$tyear;
 	
-    $resettargetquery=mysql_query("select * from tbl_roles where id='".$row['id']."'");
+    // Get the raised by name from the indent creator's ID
+    $raisedby_id = isset($row['id']) ? $row['id'] : $loginid;
+    $resettargetquery=mysql_query("select * from tbl_roles where id='".$raisedby_id."'");
   	$resetresult=mysql_fetch_array($resettargetquery);
   	$num_of_records_target_set=mysql_num_rows($resettargetquery);
 //$quer3=mysql_query("SELECT DISTINCT perticulars,whid FROM tbl_warehouse order by perticulars Asc"); 
@@ -1090,6 +1094,7 @@ $sr=$sr+1;
 </tr>
 </table>
 <input type="hidden" name="trid" value="<?php echo $trid?>" />
+<input type="hidden" name="raisedby" value="<?php echo $resetresult['name'];?>" />
 <br />
 <div id="subdiv">
 <table align="center" border="1" width="850" cellspacing="0" cellpadding="0" bordercolor="#4ea1e1" style="border-collapse:collapse" >
@@ -1147,7 +1152,7 @@ $sr=$sr+1;
 </table>
 
 <table align="center" width="850" cellpadding="5" cellspacing="5" border="0" >
-<td valign="top" align="right"><a href="add_issue_indents1.php"><img src="../images/cancel.gif" border="0"style="display:inline;cursor:pointer;" onclick="return confirm('Do You wish to Cancel this Transaction?');" /></a>&nbsp;<input name="Submit" type="image" src="../images/preview.gif" alt="Submit Value" onClick="return mySubmit();"  border="0" style="display:inline;cursor:hand;">&nbsp;&nbsp;</td>
+<td valign="top" align="right"><a href="add_issue_indents1.php"><img src="../images/cancel.gif" border="0"style="display:inline;cursor:pointer;" onclick="return confirm('Do You wish to Cancel this Transaction?');" /></a>&nbsp;<input name="Submit" type="image" src="../images/preview.gif" alt="Submit Value" onClick="mySubmit();return false;"  border="0" style="display:inline;cursor:hand;">&nbsp;&nbsp;</td>
 </tr>
 </table>
 </td><td width="30"></td>

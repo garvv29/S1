@@ -23,9 +23,16 @@
 	//$role="eindent";
 	//$id="42";
 	//$name="Ram";
+	$pid = '';
+	$itmid = '';
+	
 	if(isset($_REQUEST['p_id']))
 	{
   $pid = $_REQUEST['p_id'];
+	}
+	if(isset($_POST['p_id']))
+	{
+	$pid = $_POST['p_id'];  // POST takes priority
 	}
 	 if(isset($_REQUEST['itmid']))
 	{
@@ -33,7 +40,7 @@
 	}	
  	
 	
-	if(isset($_POST['frm_action'])=='submit')
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{
 	
 	$s_chk=mysql_query("SELECT * FROM tbl_ieindent where yearcode='$yearid_id'") or die (mysql_error());
@@ -311,6 +318,7 @@ $tdate=$row_tbl['tdate'];
 	    <td align="center" colspan="4" >
 	<form id="mainform" name="frmaddDepartment" method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>" > 
 	 <input name="frm_action" value="submit" type="hidden">
+	 <input type="hidden" name="p_id" value="<?php echo $pid?>" />
 	 <input type="hidden" name="code" value="<?php echo $row_tbl['code1']?>" />
 	 <input type="hidden" name="txtitem" value="<?php echo $pid?>" />
 
@@ -342,7 +350,7 @@ $tdate=$row_tbl['tdate'];
 	 </tr>
 
 <tr class="Light" height="30">
-<td width="151" align="right" valign="middle" class="tblheading">Indent Number  </td>
+<td width="151" align="right" valign="middle" class="tblheading">Indent Numberï¿½ï¿½</td>
 <td width="219"  align="left" valign="middle" class="tbltext">&nbsp;<?php echo "T".$row_tbl['code1'];?></td>
 <?php 
 $result=mysql_query("SELECT * FROM tbl_roles where id='".$loginid."'")or die(mysql_error()); 

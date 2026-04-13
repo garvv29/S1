@@ -76,10 +76,11 @@ $sql_yr=mysql_query("select * from tblyears where years_flg =1 and years_status=
 			{ $flg2=0;}
 		
 
-$s_sub="delete from tbl_ieindent where tflg=0 and id='$loginid'";
-	mysql_query($s_sub) or die(mysql_error());	
+// Delete incomplete indents - REMOVED to prevent data loss
+// $s_sub="delete from tbl_ieindent where tflg=0 and id='$loginid'";
+// mysql_query($s_sub) or die(mysql_error());	
 	
-if(isset($_POST['frm_action'])=='submit')
+if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{
 		$sdate1=trim($_POST['sdate']);
 		$edate1=trim($_POST['edate']);

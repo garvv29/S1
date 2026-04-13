@@ -1,0 +1,6 @@
+[06:45:37] ===== PAGE LOAD: getuser_indentupdate.php =====
+[06:45:37] Login ID: 42 | Year: 26-27
+[06:45:37] CREATING NEW INDENT - SQL: insert into tbl_ieindent(code1, tdate, id, yearcode, remarks)values('1', '2026-04-13', '42', '26-27', '')
+[06:45:37] NEW INDENT CREATED! TID: 61292 | code1: 1 | loginid: 42
+[06:45:37] INSERTING ITEM - SQL: insert into tbl_ieindent_sub(id_in , classification_id , items_id , uom , ups , qty)values('61292','86','9','Kg','0','10')
+[06:45:37] ITEM INSERTED! classification: 86 | item: 9 | qty: 10

@@ -79,6 +79,23 @@ if (xmlHttp.readyState==4 )
  if(xmlHttp.status == 200) {
 	 //alert(showUser.el);
  document.getElementById(showUser.el).innerHTML=xmlHttp.responseText ;
+ 
+ // Extract Transaction ID from AJAX response for indent update (mform)
+ if(showUser.el == 'ind' && xmlHttp.responseText.indexOf('TRANSACTION_ID:') > -1) {
+ 	var responseText = xmlHttp.responseText;
+ 	var startIdx = responseText.indexOf('TRANSACTION_ID:') + 'TRANSACTION_ID:'.length;
+ 	var endIdx = responseText.indexOf(':END_TRANSACTION_ID', startIdx);
+ 	if(startIdx > -1 && endIdx > startIdx) {
+ 		var transactionId = responseText.substring(startIdx, endIdx).trim();
+ 		if(transactionId && transactionId > 0) {
+ 			// Update the hidden maintrid field in the form
+ 			if(document.getElementsByName('maintrid')[0]) {
+ 				document.getElementsByName('maintrid')[0].value = transactionId;
+ 				console.log('Indent Transaction ID updated to:', transactionId);
+ 			}
+ 		}
+ 	}
+ }
  }
  } 
 }

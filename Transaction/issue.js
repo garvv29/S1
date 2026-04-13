@@ -286,6 +286,23 @@ if (xmlHttp.readyState==4 )
  if(xmlHttp.status == 200) {
 	// alert(showUser.el);
  document.getElementById(showUser.el).innerHTML=xmlHttp.responseText ;
+ 
+ // Extract Transaction ID from response for mformupdate (eindent update)
+ if(showUser.el == 'maindiv' && xmlHttp.responseText.indexOf('TRANSACTION_ID:') > -1) {
+ 	var responseText = xmlHttp.responseText;
+ 	var startIdx = responseText.indexOf('TRANSACTION_ID:') + 'TRANSACTION_ID:'.length;
+ 	var endIdx = responseText.indexOf(':END_TRANSACTION_ID', startIdx);
+ 	if(startIdx > -1 && endIdx > startIdx) {
+ 		var transactionId = responseText.substring(startIdx, endIdx).trim();
+ 		if(transactionId && transactionId > 0) {
+ 			// Update the hidden trid field in the form
+ 			if(document.getElementsByName('trid')[0]) {
+ 				document.getElementsByName('trid')[0].value = transactionId;
+ 				console.log('Transaction ID updated to:', transactionId);
+ 			}
+ 		}
+ 	}
+ }
  }
  } 
 }

@@ -118,6 +118,10 @@ $tid=$i1;
 $sql_tbl_sub=mysql_query("select * from tbl_ieindent_sub where id_in='".$tid."'") or die(mysql_error());
 $subtid=0;
 ?>
+<!-- OUTPUT TRANSACTION ID FOR JAVASCRIPT TO UPDATE HIDDEN FIELD -->
+<div style="display:none;" id="transaction_id_output">
+TRANSACTION_ID:<?php echo $mainid; ?>:END_TRANSACTION_ID
+</div>
 <table align="center" border="1" cellspacing="0" cellpadding="0" width="750" bordercolor="#4ea1e1" style="border-collapse:collapse"> <tr class="tblsubtitle" height="25">
 <td width="53" align="center" class="tblheading" valign="middle">#</td>
 <td width="141" align="center" class="tblheading" valign="middle">Classification </td>

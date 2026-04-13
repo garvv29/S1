@@ -47,9 +47,6 @@ if (!isset($base_path)) {
                   <li><a href="Javascript:void(0)" onClick="window.open('<?php echo $base_path; ?>utility/utility_wh.php','WelCome','top=10,left=50,width=850,height=400,scrollbars=NO')">&nbsp;SLOC&nbsp;Search</a></li>
                   <li><a href="Javascript:void(0)" onClick="window.open('<?php echo $base_path; ?>utility/utility.php','WelCome','top=10,left=40,width=850,height=300,scrollbars=Yes')">&nbsp;Stores&nbsp;Item&nbsp;Search</a></li>
                   <li><a href="Javascript:void(0)" onClick="window.open('<?php echo $base_path; ?>utility/abbravation.php','WelCome','top=10,left=50,width=650,height=900,scrollbars=yes')">&nbsp;Abbreviations</a></li>
-                  <li><a href="Javascript:void(0)" onClick="window.open('<?php echo $base_path; ?>utility/generate_qrcodes.php','WelCome','top=10,left=50,width=650,height=900,scrollbars=yes')">&nbsp;Generate QR Code</a></li>
-                  <li><a href="Javascript:void(0)" onClick="window.open('<?php echo $base_path; ?>utility/scan_and_update_weight.php','WelCome','top=10,left=50,width=650,height=900,scrollbars=yes')">&nbsp;Scan & Update Weight</a></li>
-                  <li><a href="<?php echo $base_path; ?>Transaction/qr_linking_report.php">&nbsp;QR Linking Report</a></li>
                   <!-- <li><a href="<?php echo $base_path; ?>Transaction/verify_qr_linking.php">&nbsp;Verify QR Linking</a></li> -->
                 </ul>
               </li>

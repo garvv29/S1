@@ -32,16 +32,19 @@
    // $id="42";
 	//$role="eindent";
 	
-	if(isset($_POST['frm_action'])=='submit')
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{
 		$p_id=trim($_POST['maintrid']);
 		$txtremarks=trim($_POST['txtremarks']);
 		$txtremarks=str_replace("&","and",$txtremarks);
 		
-		$sql_in1="update tbl_ieindent set remarks='$txtremarks' where tid='$p_id'";
-		mysql_query($sql_in1) or die(mysql_error());
-		
-		echo "<script>window.location='add_indents_preview.php?p_id=$p_id'</script>";
+		if($p_id != '' && $p_id != 0)
+		{
+			$sql_in1="update tbl_ieindent set remarks='$txtremarks' where tid='$p_id'";
+			mysql_query($sql_in1) or die(mysql_error());
+			
+			echo "<script>window.location='add_indents_preview.php?p_id=$p_id'</script>";
+		}
 	}
 
 
@@ -468,7 +471,7 @@ $tid=0; $subtid=0;
 </tr>
 
 <tr class="Light" height="30">
-<td width="186" align="right" valign="middle" class="tblheading">Indent Number  </td>
+<td width="186" align="right" valign="middle" class="tblheading">Indent Numberï¿½ï¿½</td>
 <td width="213"  align="left" valign="middle" class="tbltext">&nbsp;<input name="ino" type="text" size="10" class="tbltext" tabindex="" readonly="true" style="background-color:#CCCCCC"  value="<?php echo "T".$code?>"/></td>
 <?php 
 $result=mysql_query("SELECT * FROM tbl_roles where id='".$loginid."'") or die(mysql_error()); 

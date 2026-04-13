@@ -227,6 +227,10 @@ mysql_query($sql_sub_sub) or die(mysql_error());
 $sql1=mysql_query("select * from tbl_ieindent where tid=$tid")or die(mysql_error());
     $row=mysql_fetch_array($sql1);
 ?>
+<!-- OUTPUT TRANSACTION ID FOR JAVASCRIPT TO UPDATE HIDDEN FIELD -->
+<div style="display:none;" id="transaction_id_output">
+TRANSACTION_ID:<?php echo $mainid; ?>:END_TRANSACTION_ID
+</div>
 <table align="center" border="1" cellspacing="0" cellpadding="0" width="850" bordercolor="#4ea1e1" style="border-collapse:collapse">
             <tr class="tblsubtitle" height="35">
               <td width="3%" rowspan="2" align="center" valign="middle" class="tblheading">#</td>

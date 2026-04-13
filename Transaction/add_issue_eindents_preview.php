@@ -22,6 +22,12 @@
 	//$yearid_id="09-10";
 	//$logid=44;
 	
+	// Initialize variables to prevent undefined variable errors
+	$tid = '';
+	$pid = '';
+	$remarks = '';
+	$raisedby_name = '';
+	
 	if(isset($_REQUEST['tid']))
 	{
 	$tid = $_REQUEST['tid'];
@@ -36,11 +42,19 @@
 	$remarks = $_GET['remarks'];	 
 	}
 	
-	$sql_main222="update tblissue set remarks='$remarks' where issue_id = '$pid'";
-
-	$a1234=mysql_query($sql_main222) or die(mysql_error());
+	if(isset($_GET['raisedby']))
+	{
+	$raisedby_name = $_GET['raisedby'];	 
+	}
 	
-	if(isset($_POST['frm_action'])=='submit')
+	// Only update remarks if we have valid values from GET (when coming from indent page)
+	if($pid != '' && $remarks != '')
+	{
+		$sql_main222="update tblissue set remarks='$remarks' where issue_id = '$pid'";
+		$a1234=mysql_query($sql_main222) or die(mysql_error());
+	}
+	
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{	
 		$pid=trim($_POST['pid']);
 		$tid=trim($_POST['tid']);
@@ -274,7 +288,8 @@ function mySubmit()
 	}
 	else if(confirm('Have You completed the Transaction?\nDo You wish to Final Submit it?')==true)
 	{
-	return true;	 
+		document.frmaddDept.submit();
+		return true;	 
 	}
 	else
 	{
@@ -400,8 +415,21 @@ function mySubmit()
   </tr>
    <?php
     
-    $resettargetquery=mysql_query("select * from tbl_roles where id='".$row['id']."'");
-  	$resetresult=mysql_fetch_array($resettargetquery);
+    if(isset($raisedby_name) && $raisedby_name != '')
+    {
+        // Use the raisedby value passed from the main form
+        $resetresult['name'] = $raisedby_name;
+    }
+    else
+    {
+        $sql2=mysql_query("select * from tblissue where issue_id=$pid")or die(mysql_error());
+        $row2=mysql_fetch_array($sql2);
+        
+        // Get raised by from issue_role (who created the issue)
+        $raisedby_id = isset($row2['issue_role']) ? $row2['issue_role'] : $loginid;
+        $resettargetquery=mysql_query("select * from tbl_roles where id='".$raisedby_id."'");
+        $resetresult=mysql_fetch_array($resettargetquery);
+    }
   	$num_of_records_target_set=mysql_num_rows($resettargetquery);
 //$quer3=mysql_query("SELECT DISTINCT perticulars,whid FROM tbl_warehouse order by perticulars Asc"); 
 
@@ -412,7 +440,7 @@ function mySubmit()
 
 	
 	 <tr class="Dark" height="30">
-	 <td width="205" align="right" valign="middle" class="tblheading">Transaction ID   </td>
+	 <td width="205" align="right" valign="middle" class="tblheading">Transaction ID ï¿½ï¿½</td>
 <td width="215"  align="left" valign="middle" class="tbltext">&nbsp;<?php echo "TIE".$row2['issue_code']."/".$yearid_id."/".$lgnid;?></td>
 
 <td width="193" align="right" valign="middle" class="tblheading">&nbsp;Date&nbsp;</td>
@@ -427,7 +455,7 @@ function mySubmit()
 <td width="227" colspan="3" align="left" valign="middle" class="tbltext">&nbsp;<input name="raisedby" type="text" size="15" class="tbltext" tabindex="" readonly="true" style="background-color:#CCCCCC" value="<?php echo $resetresult['name'];?>" />&nbsp; </td>
 </tr>
  <tr class="Dark" height="30">
-<td width="205" align="right" valign="middle" class="tblheading">&nbsp;Indent Date &nbsp;</td>
+<td width="205" align="right" valign="middle" class="tblheading">&nbsp;Indentï¿½Dateï¿½&nbsp;</td>
 <td width="215"  align="left" valign="middle" class="tbltext" colspan="3">&nbsp;<input name="indentdate" type="text" size="10" class="tbltext" tabindex="" readonly="true" style="background-color:#CCCCCC" value="<?php echo $tdate;?>" /></td>
 </tr>
 </table>
@@ -595,7 +623,7 @@ $sr=$sr+1;
 
 <table align="center" width="850" cellpadding="5" cellspacing="5" border="0" >
 <tr >
-<td valign="top" align="right"><a href="edit_issue_indents.php?p_id=<?php echo $pid;?>&tid=<?php echo $tid;?>"><img src="../images/edit.gif" border="0"style="display:inline;cursor:hand;" /></a>&nbsp;&nbsp;<a href="Javascript:void(0)" onclick="openslocpopprint();"><img src="../images/printpreview.gif" border="0"style="display:inline;cursor:hand;" /></a>&nbsp;&nbsp;<input name="Submit" type="image" src="../images/finalsubmit.gif" alt="Submit Value"  border="0" style="display:inline;cursor:hand;" tabindex="" onClick="return mySubmit();">&nbsp;&nbsp;</td>
+<td valign="top" align="right"><a href="edit_issue_indents.php?p_id=<?php echo $pid;?>&tid=<?php echo $tid;?>"><img src="../images/edit.gif" border="0"style="display:inline;cursor:hand;" /></a>&nbsp;&nbsp;<a href="Javascript:void(0)" onclick="openslocpopprint();"><img src="../images/printpreview.gif" border="0"style="display:inline;cursor:hand;" /></a>&nbsp;&nbsp;<input name="Submit" type="image" src="../images/finalsubmit.gif" alt="Submit Value"  border="0" style="display:inline;cursor:hand;" tabindex="" onClick="mySubmit();return false;">&nbsp;&nbsp;</td>
 </tr>
 </table></td><td width="30"></td>
 </tr>

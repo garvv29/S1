@@ -1,0 +1,29 @@
+[06:45:11] ===== PAGE LOAD: add_indents.php =====
+[06:45:11] Login ID: 42 | Username: jagdeep | Year: 26-27
+[06:45:11] Pending Indents Query: SELECT from tbl_ieindent WHERE flg=0 AND id=42
+[06:45:11] Pending Indents Count: 0 records found
+[06:45:54] ===== PAGE LOAD: add_indents.php =====
+[06:45:54] Login ID: 42 | Username: jagdeep | Year: 26-27
+[06:45:54] Pending Indents Query: SELECT from tbl_ieindent WHERE flg=0 AND id=42
+[06:45:54] Pending Indents Count: 1 records found
+[06:45:54] ===== POST SUBMIT DETECTED =====
+[06:45:54] POST Data Received: frm_action=submit
+[06:45:54] POST maintrid: 61292
+[06:45:54] POST txtremarks: 
+[06:45:54] After trim - p_id: 61292 | remarks length: 0
+[06:45:54] Executing UPDATE: update tbl_ieindent set remarks='' where tid='61292'
+[06:45:54] UPDATE Success! Affected rows: 0
+[06:45:54] Redirecting to: add_indents_preview.php?p_id=61292
+[06:45:54] ===== PAGE LOAD: add_indents_preview.php =====
+[06:45:54] GET Data Received: p_id=61292 | itmid=NOT SET
+[06:45:54] pid extracted: 61292
+[06:46:10] ===== PAGE LOAD: add_indents_preview.php =====
+[06:46:10] GET Data Received: p_id=NOT SET | itmid=NOT SET
+[06:46:10] ===== FINAL SUBMIT DETECTED =====
+[06:46:10] POST pid: 
+[06:46:10] Total indents in yearcode 26-27: 1
+[06:46:10] SQL Code Query: SELECT MAX(code) FROM tbl_ieindent where yearcode='26-27'  ORDER BY code DESC
+[06:46:10] Previous max code:  | New code: 1
+[06:46:10] FINAL UPDATE SQL: update tbl_ieindent set code='1', tflg=1  where tid = ''
+[06:46:10] UPDATE Success! Affected rows: 0 | Code assigned: 1
+[06:46:10] ===== REDIRECT to indexindet.php =====
