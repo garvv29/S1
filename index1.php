@@ -1,3 +1,19 @@
+<?php
+session_start();
+if(!isset($_SESSION['sessionadmin']))
+{
+	echo '<script language="JavaScript" type="text/JavaScript">';
+	echo "window.location='login.php' ";
+	echo '</script>';
+}
+else
+{
+	$year1=$_SESSION['ayear1'];
+	$year2=$_SESSION['ayear2'];
+	$username= $_SESSION['username'];
+	$role=$_SESSION['role'];
+}
+?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <script type="text/javascript" src="include/animatedcollapse.js"></script>

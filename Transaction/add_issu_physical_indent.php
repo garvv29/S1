@@ -20,14 +20,21 @@
 	require_once("../include/config.php");
 	require_once("../include/connection.php");
 	
+	// Initialize p_id from GET if present
+	$p_id=0;
+	if(isset($_GET['p_id'])) { $p_id = $_GET['p_id']; }
 	
-	if(isset($_POST['frm_action'])=='submit')
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{ 
 		$p_id=trim($_POST['trid']);
 		$remarks=trim($_POST['txtremarks']);
 		$remarks=str_replace("&","and",$remarks);
-	
-		echo "<script>window.location='add_issue_pindents_preview.php?p_id=$p_id&remarks=$remarks'</script>";	
+		
+		// Get QR IDs from qr_ids field (new) or scanned_qr_ids field (old)
+		$qr_ids = isset($_POST['qr_ids']) ? trim($_POST['qr_ids']) : (isset($_POST['scanned_qr_ids']) ? trim($_POST['scanned_qr_ids']) : '');
+		$qr_ids_param = !empty($qr_ids) ? "&qr_ids=" . urlencode($qr_ids) : "";
+		
+		echo "<script>window.location='add_issue_pindents_preview.php?p_id=$p_id&remarks=$remarks" . $qr_ids_param . "'</script>";	
 	}
 //}
 //}
@@ -253,6 +260,166 @@ function piupschk()
 		alert("Please select Item first");
 		document.frmaddDept.txtitem.focus();
 	}
+	else
+	{
+		// Check if classification is Roll and show Scan QR button
+		var classText = document.frmaddDept.txtclass.options[document.frmaddDept.txtclass.selectedIndex].text;
+		var scanBtn = document.getElementById('scanQRBtn');
+		
+		if(classText && classText.toLowerCase().indexOf('roll') >= 0 && document.frmaddDept.txtups.value > 0)
+		{
+			if(scanBtn) scanBtn.style.display = 'inline';
+		}
+		else
+		{
+			if(scanBtn) scanBtn.style.display = 'none';
+		}
+	}
+}
+
+// Check QR button visibility based on classification and UPS value
+function checkQRButtonVisibility(srno, classid, itemid)
+{
+	// Check if this is a Roll classification
+	var isRoll = document.getElementById('classisroll_' + srno).value;
+	console.log('Row ' + srno + ': Checking QR button visibility. Classification is Roll: ' + isRoll);
+	
+	if(isRoll == '1')
+	{
+		console.log('Row ' + srno + ': Classification = Roll ✓');
+		
+		// Get the UPS value
+		var issueups = document.getElementById('issueups_' + srno).value;
+		console.log('Row ' + srno + ': Issue UPS value = ' + issueups);
+		
+		// Show or hide the Scan QR button
+		var qrBtn = document.getElementById('qrbtn_' + srno);
+		if(issueups > 0)
+		{
+			console.log('Row ' + srno + ': UPS > 0, showing Scan QR button');
+			qrBtn.style.display = 'inline';
+		}
+		else
+		{
+			console.log('Row ' + srno + ': UPS = 0, hiding Scan QR button');
+			qrBtn.style.display = 'none';
+		}
+	}
+	else
+	{
+		console.log('Row ' + srno + ': Classification is NOT Roll, hiding Scan QR button');
+		var qrBtn = document.getElementById('qrbtn_' + srno);
+		qrBtn.style.display = 'none';
+	}
+}
+
+// QR Scanning from SLOC Table (when user enters UPS value)
+function openQRScanPopupFromSLOC(srno, classid, itemid)
+{
+	var issueUPS = document.getElementById('issueups_' + srno).value;
+	
+	if(issueUPS == "" || issueUPS == "0")
+	{
+		alert("Please enter Issue UPS value first");
+		return false;
+	}
+	
+	// Store row number for callback
+	window.currentQRRowNum = srno;
+	
+	// Open QR scanning popup
+	var popupUrl = 'scan_qrcode_indent.php?classification_id=' + classid + '&item_id=' + itemid + '&ups=' + issueUPS;
+	winHandle = window.open(popupUrl, 'QRScan', 'top=200,left=200,width=1000,height=700,scrollbars=yes');
+	
+	if(winHandle == null)
+	{
+		alert("Could not open QR Scanning window.\nPlease check your Popup Blocker settings.");
+	}
+}
+
+// QR Scanning for Roll Classification
+function openQRScanPopup(classid, itemid, ups)
+{
+	if(classid == "" || itemid == "" || ups == "" || ups == "0")
+	{
+		alert("Please enter Classification, Item and UPS first");
+		return false;
+	}
+	
+	// Get classification name to check if it's Roll
+	var classText = document.frmaddDept.txtclass.options[document.frmaddDept.txtclass.selectedIndex].text;
+	
+	if(classText && classText.toLowerCase().indexOf('roll') >= 0)
+	{
+		window.qrUpsCount = parseInt(ups);
+		window.qrScanContext = {classid: classid, itemid: itemid, ups: ups};
+		winHandle = window.open('scan_qrcode_indent.php?classification_id=' + classid + '&item_id=' + itemid + '&ups=' + ups, 'QRScan', 'top=200,left=200,width=1000,height=700,scrollbars=yes');
+		if(winHandle == null)
+		{
+			alert("Could not open QR Scanning window.\nPlease check your Popup Blocker settings.");
+		}
+	}
+	else
+	{
+		alert("Scan QR is only available for Roll classification");
+	}
+}
+
+// Called from scan_qrcode_indent.php popup when user submits QR codes
+function setQRTotalWeight(totalWeight, qrIdList)
+{
+	var srno = window.currentQRRowNum;
+	
+	// If called from SLOC table row (srno exists)
+	if(srno && srno > 0)
+	{
+		// Populate Issue Qty field for that row
+		var issueqtyField = document.getElementById('issueqty_' + srno);
+		if(issueqtyField)
+		{
+			issueqtyField.value = totalWeight;
+			issueqtyField.readOnly = true;
+			issueqtyField.style.backgroundColor = '#CCCCCC';
+			console.log('Row ' + srno + ' Qty populated with weight: ' + totalWeight);
+		}
+		
+		// Store QR IDs for this SLOC row
+		if(qrIdList && qrIdList.length > 0)
+		{
+			var hiddenFieldName = 'scanned_qr_ids_' + srno;
+			var existingField = document.getElementById(hiddenFieldName);
+			if(!existingField)
+			{
+				existingField = document.createElement('input');
+				existingField.type = 'hidden';
+				existingField.id = hiddenFieldName;
+				existingField.name = hiddenFieldName;
+				document.frmaddDept.appendChild(existingField);
+			}
+			var qrIdString = qrIdList.join(',');
+			existingField.value = qrIdString;
+			console.log('Row ' + srno + ' QR IDs stored:', qrIdString);
+		}
+	}
+	else
+	{
+		// Called from main form (not from SLOC table)
+		document.frmaddDept.txtqty.value = totalWeight;
+		document.frmaddDept.txtqty.readOnly = true;
+		document.frmaddDept.txtqty.style.backgroundColor = '#CCCCCC';
+		
+			// Store QR IDs for final submission
+		if(qrIdList && qrIdList.length > 0)
+		{
+			var qrIdString = qrIdList.join(',');
+			document.frmaddDept.qr_ids.value = qrIdString;
+			document.frmaddDept.scanned_qr_ids.value = qrIdString;
+			console.log('QR IDs stored in qr_ids field:', qrIdString);
+		}
+	}
+	
+	// Show confirmation
+	alert('✓ QR Scan Complete\nTotal Weight: ' + totalWeight);
 }
 
 function showslocbins()
@@ -885,6 +1052,7 @@ return true;
 	 <input name="frm_action" value="submit" type="hidden"> 
 	 <input name="code" type="hidden" value="<?php echo $code;?>" />
 	<input name="tid" type="hidden" value="<?php echo $tid;?>" />
+	<input name="p_id" type="hidden" value="<?php echo $p_id;?>" />
 	 <br />
 
 <table  border="0" cellspacing="0" cellpadding="0" align="center" width="974"  style="border-collapse:collapse">
@@ -985,24 +1153,27 @@ $itemqry=mysql_query("select items_id, stores_item from tbl_stores") or die(mysq
 <td width="169" colspan="3" align="left" valign="middle" class="tbltext" >&nbsp;<input name="txtqty" type="text" size="10" class="tbltext" tabindex="0" maxlength="7" onchange="piqtychk(this.value);" onkeypress="return isNumberKey(event)" />&nbsp;<font color="#FF0000">*</font></td>
          </tr>
 </table><input type="hidden" name="trid" value="<?php echo $trid?>" />
+<input type="hidden" name="qr_ids" id="qr_ids" value="" />
+<input type="hidden" name="scanned_qr_ids" value="" />
 <br />
 <div id="subdiv">
 <table align="center" border="1" width="750" cellspacing="0" cellpadding="0" bordercolor="#4ea1e1" style="border-collapse:collapse" >
 <tr class="tblsubtitle" height="20">
-
  <td colspan="3" align="center" valign="middle" class="tblheading">Existing SLOC</td>
-  <td  colspan="2" align="center" valign="middle" class="tblheading">Issue</td>
-  <td colspan="2" align="center" valign="middle" class="tblheading">Balance</td>
-  </tr>
+ <td colspan="2" align="center" valign="middle" class="tblheading">Issue</td>
+ <td colspan="2" align="center" valign="middle" class="tblheading">Balance</td>
+ <td colspan="2" align="center" valign="middle" class="tblheading">Action</td>
+</tr>
 <tr class="tblsubtitle" height="20">
-<td width="60" align="center" valign="middle" class="tblheading" style="display:none">Select</td>
-<td width="98" align="center" valign="middle" class="tblheading">SLOC</td>
-<td width="84" align="center" valign="middle" class="tblheading">UPS</td>
-<td width="103" align="center" valign="middle" class="tblheading">Qty</td>
-<td width="84" align="center" valign="middle" class="tblheading">UPS</td>
-<td width="103" align="center" valign="middle" class="tblheading">Qty</td>
-<td width="65" align="center" valign="middle" class="tblheading">UPS</td>
-<td width="66" align="center" valign="middle" class="tblheading">Qty</td>
+<td width="120" align="center" valign="middle" class="tblheading">SLOC</td>
+<td width="70" align="center" valign="middle" class="tblheading">UPS</td>
+<td width="80" align="center" valign="middle" class="tblheading">Qty</td>
+<td width="70" align="center" valign="middle" class="tblheading">UPS</td>
+<td width="80" align="center" valign="middle" class="tblheading">Qty</td>
+<td width="70" align="center" valign="middle" class="tblheading">UPS</td>
+<td width="80" align="center" valign="middle" class="tblheading">Qty</td>
+<td width="50" align="center" valign="middle" class="tblheading">Edit</td>
+<td width="50" align="center" valign="middle" class="tblheading">Delete</td>
 </tr>
 <input type="hidden" name="srno" value="" /> <input type="hidden" name="chkbox" value=""/> <input type="hidden" name="srno1" value=""/>
 </table>

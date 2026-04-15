@@ -195,9 +195,30 @@ $cntg=0;
 	$sql_main1="update tbl_ieindent set flg=1  where tid = '$tid'";
 
 	$a123=mysql_query($sql_main1) or die(mysql_error());
+
+// Mark all scanned QR codes as used and finalsubmit for this completed transaction
+	// FIRST: Mark QR IDs explicitly if passed from form
+	if(isset($_REQUEST['qr_ids']) && $_REQUEST['qr_ids'] != '')
+	{
+		$qr_ids_to_update = $_REQUEST['qr_ids'];
+		$qr_id_array = explode(',', $qr_ids_to_update);
+		
+		foreach($qr_id_array as $qr_id)
+		{
+			$qr_id = trim($qr_id);
+			if($qr_id != '' && is_numeric($qr_id))
+			{
+				// Mark as both used=1 and finalsubmit=2
+				$sql_qr_update = "UPDATE tbl_qr_codes SET used=1, finalsubmit=2 WHERE qr_id='$qr_id'";
+				mysql_query($sql_qr_update) or die("Error marking QR $qr_id: " . mysql_error());
+			}
+		}
+	}
 	
-
-
+	// BACKUP: Also mark all used=1 codes that haven't been finalized yet
+	$qr_backup_sql = "UPDATE tbl_qr_codes SET finalsubmit=2 WHERE used=1 AND finalsubmit != 2";
+	$qr_backup_result = mysql_query($qr_backup_sql) or die("Error updating QR codes: " . mysql_error());
+	
 
 			echo "<script>window.location='select_issue_eindentop.php?p_id=$pid&tid=$tid'</script>";	
 }

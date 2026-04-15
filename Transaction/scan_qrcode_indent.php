@@ -619,9 +619,64 @@ function calculateTotalWeight() {
 	return totalWeight;
 }
 
+// Synchronous XMLHttpRequest function to mark QR codes as used
+function markQRCodesAsUsed(qrIdsArray) {
+	if(!qrIdsArray || qrIdsArray.length === 0) {
+		console.log('No QR IDs to mark');
+		return;
+	}
+	
+	try {
+		var xhr = new XMLHttpRequest();
+		
+		// Build POST data
+		var postData = 'qr_ids[]=' + qrIdsArray.join('&qr_ids[]=');
+		console.log('Sending POST data:', postData);
+		
+		// Open synchronously
+		xhr.open('POST', './mark_qr_used_indent.php', false);
+		xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+		
+		// Send the request
+		xhr.send(postData);
+		
+		// Check response
+		console.log('Response Status:', xhr.status);
+		console.log('Response Text:', xhr.responseText);
+		
+		if(xhr.status === 200) {
+			try {
+				var response = JSON.parse(xhr.responseText);
+				if(response.success === true) {
+					console.log('✓✓✓ SUCCESS! Marked', response.marked_count, 'QR codes as used=1');
+					jQuery('#success-message').html('✓✓✓ QR codes marked as USED=1 in database!');
+					return true;
+				} else {
+					console.log('✗ Server returned success=false:', response.message);
+					console.log('Details:', response);
+				}
+			} catch(e) {
+				console.log('✗ Could not parse JSON response:', e);
+				console.log('Raw response was:', xhr.responseText);
+			}
+		} else {
+			console.log('✗ HTTP Error:', xhr.status, xhr.statusText);
+		}
+	} catch(e) {
+		console.log('✗ XMLHttpRequest error:', e);
+	}
+	
+	return false;
+}
+
 function submitQRData() {
+	console.log('╔════════════════════════════════════════════════════╗');
+	console.log('║  SUBMIT QR DATA FUNCTION CALLED                    ║');
+	console.log('╚════════════════════════════════════════════════════╝');
+	
 	// Validate all QRs are filled
 	if(!validateTable()) {
+		console.log('❌ Validation failed');
 		return;
 	}
 	
@@ -642,28 +697,52 @@ function submitQRData() {
 		}
 	}
 	
-	// Mark QR codes as used in database
+	console.log('✓ QR IDs collected:', qrIdsToMark);
+	
+	// Mark QR codes as used in database - SYNCHRONOUSLY (async: false)
 	if(qrIdsToMark.length > 0) {
+		var markedSuccessfully = false;
+		console.log('📤 Sending AJAX to mark_qr_used_indent.php with', qrIdsToMark.length, 'QR IDs');
+		
 		jQuery.ajax({
-			url: 'mark_qr_used_indent.php',
+			url: './mark_qr_used_indent.php',  // Current directory path
 			type: 'POST',
-			data: {
-				qr_ids: qrIdsToMark
-			},
 			dataType: 'json',
-			async: false, // Wait for this to complete
-			timeout: 5000,
+			data: jQuery.param({qr_ids: qrIdsToMark}),  // Better serialization
+			async: false, // CRITICAL: Wait for completion
+			cache: false,
+			timeout: 10000,
 			success: function(response) {
-				console.log('Mark QR Used Response:', response);
-				if(!response.success) {
-					console.log('Warning: Could not mark all QR codes as used:', response.details);
+				console.log('✓ AJAX Success Response:', response);
+				if(response && response.success === true) {
+					console.log('✓✓✓ SUCCESS! QR codes marked as used=1! Count:', response.marked_count);
+					markedSuccessfully = true;
+				} else {
+					console.log('✗ Failed response. Response details:', response);
 				}
 			},
 			error: function(xhr, status, error) {
-				console.log('Error marking QR codes as used:', error);
-				// Continue anyway - don't block the process
+				console.log('✗ AJAX Error!');
+				console.log('✗ Status:', status);
+				console.log('✗ Error:', error);
+				console.log('✗ HTTP Status Code:', xhr.status);
+				console.log('✗ Response Text:', xhr.responseText);
+				// Parse response if it's JSON error
+				try {
+					var jsonResponse = jQuery.parseJSON(xhr.responseText);
+					console.log('✗ Parsed Error JSON:', jsonResponse);
+				} catch(e) {
+					console.log('✗ Could not parse error response');
+				}
 			}
 		});
+		
+		if(markedSuccessfully) {
+			console.log('✓✓✓ CONFIRMED: QR codes successfully marked as used=1 in database!');
+			jQuery('#success-message').html('✓✓✓ QR codes marked as USED in database!');
+		} else {
+			console.log('⚠ Warning: Could not confirm QR marking in database');
+		}
 	}
 	
 	// Show success message
@@ -672,14 +751,31 @@ function submitQRData() {
 	
 	// Return data to parent window
 	setTimeout(function() {
-		if(window.opener && typeof window.opener.setQRTotalWeight === 'function') {
-			window.opener.setQRTotalWeight(totalWeight);
+		var qrIdList = [];
+		
+		// Collect all QR IDs that were scanned
+		for(var rowNum = 1; rowNum <= upsCount; rowNum++) {
+			var qrId = jQuery('#qr_id_hidden_' + rowNum).val();
+			if(qrId && qrId !== '') {
+				qrIdList.push(qrId);
+			}
+		}
+		
+		// Try to call the appropriate callback based on which page is calling
+		if(window.opener && typeof window.opener.setQRTotalWeightEdit === 'function') {
+			// Called from SLOC edit page - pass QR IDs along with weight
+			window.opener.setQRTotalWeightEdit(totalWeight, qrIdList);
+			window.close();
+		} else if(window.opener && typeof window.opener.setQRTotalWeight === 'function') {
+			// Called from main physical indent form - pass QR IDs along with weight
+			window.opener.setQRTotalWeight(totalWeight, qrIdList);
 			window.close();
 		} else {
 			// Fallback to sessionStorage
 			try {
 				sessionStorage.setItem('qr_total_weight_indent', totalWeight);
 				sessionStorage.setItem('qr_total_weight_timestamp', Date.now());
+				sessionStorage.setItem('qr_ids_indent', qrIdList.join(','));
 				window.close();
 			} catch(e) {
 				alert('Error: Could not return data to parent window. Please try again.');

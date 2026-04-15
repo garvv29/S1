@@ -26,7 +26,7 @@
 	{
 	$pid = $_REQUEST['p_id'];
 	}*/
-		if(isset($_POST['frm_action'])=='submit')
+		if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{	
 		$p_id=trim($_POST['trid']);
 		$remarks=trim($_POST['txtremarks']);
@@ -70,7 +70,11 @@
 		$txtpname="";
 		}
 		
-		echo "<script>window.location='add_issue_mrtv_preview.php?p_id=$p_id&txtcla=$txtcla&txtpdc=$txtpdc&remarks=$remarks&txt11=$txt11&txttname=$txttname&txtlrn=$txtlrn&txtvn=$txtvn&txt14=$txt14&txtcname=$txtcname&txtdc=$txtdc&txtpname=$txtpname&rettyp=$rettyp'</script>";
+		// Get QR IDs if present
+		$qr_ids = isset($_POST['qr_ids']) ? trim($_POST['qr_ids']) : "";
+		$qr_ids_param = !empty($qr_ids) ? "&qr_ids=" . urlencode($qr_ids) : "";
+		
+		echo "<script>window.location='add_issue_mrtv_preview.php?p_id=$p_id&txtcla=$txtcla&txtpdc=$txtpdc&remarks=$remarks&txt11=$txt11&txttname=$txttname&txtlrn=$txtlrn&txtvn=$txtvn&txt14=$txt14&txtcname=$txtcname&txtdc=$txtdc&txtpname=$txtpname&rettyp=$rettyp" . $qr_ids_param . "'</script>";
 }
 //}
 //}
@@ -353,6 +357,130 @@ function piqtychk(edtid)
 		document.frmaddDepartment.txtups.focus();
 	}
 }	
+
+// QR Scanning Functions for Material Return
+function checkQRButtonVisibility(srno, classid, itemid)
+{
+	var isRoll = document.getElementById('classisroll_' + srno).value;
+	var issueups = document.getElementById('issueups_' + srno).value;
+	var qrbtn = document.getElementById('qrbtn_' + srno);
+	
+	console.log('Row ' + srno + ': Checking QR button visibility. Classification is Roll: ' + isRoll);
+	
+	if(isRoll == '1' || isRoll == 1)
+	{
+		console.log('Row ' + srno + ': Classification = Roll ✓');
+		console.log('Row ' + srno + ': Issue UPS value = ' + issueups);
+		
+		if(issueups > 0)
+		{
+			console.log('Row ' + srno + ': UPS > 0, showing Scan QR button ✓');
+			qrbtn.style.display = 'inline';
+		}
+		else
+		{
+			console.log('Row ' + srno + ': UPS = 0, hiding Scan QR button');
+			qrbtn.style.display = 'none';
+		}
+	}
+	else
+	{
+		console.log('Row ' + srno + ': Classification is not Roll, hiding button');
+		qrbtn.style.display = 'none';
+	}
+}
+
+function openQRScanPopupFromSLOC(srno, classid, itemid)
+{
+	var issueups = document.getElementById('issueups_' + srno).value;
+	
+	if(issueups == "" || issueups == "0")
+	{
+		alert("Please enter Issue UPS value first");
+		return false;
+	}
+	
+	// Store row number for callback
+	window.currentQRRowNum = srno;
+	
+	// Open QR scanning popup
+	var popupUrl = 'scan_qrcode_indent.php?classification_id=' + classid + '&item_id=' + itemid + '&ups=' + issueups;
+	winHandle = window.open(popupUrl, 'QRScan', 'top=200,left=200,width=1000,height=700,scrollbars=yes');
+	
+	if(winHandle == null)
+	{
+		alert("Could not open QR Scanning window.\nPlease check your Popup Blocker settings.");
+	}
+}
+
+function setQRTotalWeight(totalWeight, qrIdList)
+{
+	var srno = window.currentQRRowNum;
+	
+	// If called from SLOC table row (srno exists)
+	if(srno && srno > 0)
+	{
+		// Populate Issue Qty field for that row
+		var issueqtyField = document.getElementById('issueqty_' + srno);
+		if(issueqtyField)
+		{
+			issueqtyField.value = totalWeight;
+			issueqtyField.readOnly = true;
+			issueqtyField.style.backgroundColor = '#CCCCCC';
+			console.log('Row ' + srno + ' Qty populated with weight: ' + totalWeight);
+		}
+		
+		// Store QR IDs for this SLOC row
+		var hiddenField = document.getElementById('scanned_qr_ids_' + srno);
+		if(!hiddenField)
+		{
+			hiddenField = document.createElement('input');
+			hiddenField.type = 'hidden';
+			hiddenField.id = 'scanned_qr_ids_' + srno;
+			document.frmaddDepartment.appendChild(hiddenField);
+		}
+		hiddenField.value = qrIdList;
+		
+		// Also store in main form field for final submission
+		var mainQRField = document.getElementById('qr_ids');
+		if(mainQRField)
+		{
+			var qrIdString = Array.isArray(qrIdList) ? qrIdList.join(',') : qrIdList;
+			if(mainQRField.value != '')
+			{
+				mainQRField.value += ',' + qrIdString;
+			}
+			else
+			{
+				mainQRField.value = qrIdString;
+			}
+			console.log('QR IDs stored:', qrIdString);
+		}
+	}
+	
+	self.close();
+}
+
+function openQRScanPopupEdit()
+{
+	// This is for edit page context if needed
+	var classid = document.frmaddDepartment.txtclass.value;
+	var itemid = document.frmaddDepartment.txtitem.value;
+	var ups = document.frmaddDepartment.txtups.value;
+	
+	if(classid != '' && itemid != '' && ups > 0)
+	{
+		var winHandle = window.open('scan_qrcode_indent.php?classification_id=' + classid + '&item_id=' + itemid + '&ups=' + ups, 'QRScanWindow', 'width=600,height=400,resizable=yes,scrollbars=yes');
+		if(winHandle == null)
+		{
+			alert("Popup window blocked. Please enable popups and try again.");
+		}
+	}
+	else
+	{
+		alert("Please select Classification, Item first and enter UPS value");
+	}
+}
 
 function chktyp(opttyp)
 { opttyp="good";
@@ -1142,6 +1270,7 @@ return true;
 	 <input name="txt14" value="" type="hidden"> 
 	 <input type="hidden" name="txtid" value="<?php echo $code?>" />
 	 <input type="hidden" name="logid" value="<?php echo $logid?>" />
+	 <input type="hidden" name="qr_ids" id="qr_ids" value="" />
 	  <input name="rettyp" value="Not Returnable" type="hidden"> 
 		</br>
 <table  border="0" cellspacing="0" cellpadding="0" align="center" width="974"  style="border-collapse:collapse">

@@ -422,6 +422,9 @@ $itemqry=mysql_query("select items_id, stores_item from tbl_stores") or die(mysq
 <td width="169" colspan="3" align="left" valign="middle" class="tbltext" >&nbsp;<input name="txtqty" type="text" size="10" class="tbltext" tabindex="0" maxlength="7" onchange="piqtychk(this.value);" onkeypress="return isNumberKey(event)" />&nbsp;<font color="#FF0000">*</font></td>
          </tr>
 </table><input type="hidden" name="trid" value="<?php echo $trid?>" />
+<div style="display:none;">
+TRANSACTION_ID:<?php echo $trid > 0 ? $trid : $mainid; ?>:END_TRANSACTION_ID
+</div>
 <br />
 <div id="subdiv">
 <table align="center" border="1" width="750" cellspacing="0" cellpadding="0" bordercolor="#4ea1e1" style="border-collapse:collapse" >

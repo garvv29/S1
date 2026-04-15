@@ -307,6 +307,67 @@ if (xmlHttp.readyState==4 )
  } 
 }
 
+// QR Scanning from SLOC Edit Page (Physical Indent)
+function openQRScanPopupEdit(srno, classid, itemid)
+{
+	var issueups = document.getElementById('issueups_' + srno).value;
+	
+	if(issueups == "" || issueups == "0")
+	{
+		alert("Please enter Issue UPS value first");
+		return false;
+	}
+	
+	// Store row number for callback
+	window.currentQRRowNum = srno;
+	
+	// Open QR scanning popup
+	var popupUrl = 'scan_qrcode_indent.php?classification_id=' + classid + '&item_id=' + itemid + '&ups=' + issueups;
+	winHandle = window.open(popupUrl, 'QRScan', 'top=200,left=200,width=1000,height=700,scrollbars=yes');
+	
+	if(winHandle == null)
+	{
+		alert("Could not open QR Scanning window.\nPlease check your Popup Blocker settings.");
+	}
+}
+
+// Handle QR popup return with total weight (from SLOC edit page)
+function setQRTotalWeightEdit(totalWeight, qrIdList)
+{
+	var srno = window.currentQRRowNum;
+	if(srno)
+	{
+		// Auto-populate Qty field with total weight
+		document.getElementById('issueqty_' + srno).value = totalWeight;
+		// Make it read-only
+		document.getElementById('issueqty_' + srno).readOnly = true;
+		document.getElementById('issueqty_' + srno).style.backgroundColor = '#CCCCCC';
+		
+		// Store QR IDs in a hidden field for this row
+		var hiddenFieldName = 'scanned_qr_ids_' + srno;
+		var existingField = document.getElementById(hiddenFieldName);
+		if(!existingField)
+		{
+			//Create hidden field if it doesn't exist
+			existingField = document.createElement('input');
+			existingField.type = 'hidden';
+			existingField.id = hiddenFieldName;
+			existingField.name = hiddenFieldName;
+			document.body.appendChild(existingField);
+		}
+		
+		if(qrIdList && qrIdList.length > 0)
+		{
+			var qrIdString = qrIdList.join(',');
+			existingField.value = qrIdString;
+			console.log('QR IDs stored for row ' + srno + ':', qrIdString);
+		}
+		
+		// Show confirmation
+		alert('✓ QR Scan Complete\nTotal Weight: ' + totalWeight);
+	}
+}
+
 function GetXmlHttpObject()
 {
 var xmlHttp=null;

@@ -62,6 +62,7 @@ if (!isset($base_path)) {
                   <li><a href="Javascript:void(0)" onClick="window.open('<?php echo $base_path; ?>utility/utility.php','WelCome','top=10,left=40,width=850,height=300,scrollbars=Yes')">&nbsp;Stores&nbsp;Item&nbsp;Search</a></li>
                   <li><a href="Javascript:void(0)" onClick="window.open('<?php echo $base_path; ?>utility/abbravation.php','WelCome','top=10,left=50,width=650,height=900,scrollbars=yes')">&nbsp;Abbreviations</a></li>
                   <li><a href="Javascript:void(0)" onClick="window.open('<?php echo $base_path; ?>utility/backup.php','WelCome','top=10,left=50,width=650,height=900,scrollbars=yes')">&nbsp;Backup</a></li>
+                  <li><a href="<?php echo $base_path; ?>utility/qr_scan_logs.php">&nbsp;QR&nbsp;Scan&nbsp;Logs</a></li>
                 </ul>
               </li>
             </ul>

@@ -35,7 +35,12 @@
 		$remarks=trim($_POST['txtremarks']);
 		$raisedby=trim($_POST['raisedby']);
 		$remarks=str_replace("&","and",$remarks);
-		echo "<script>window.location='add_issue_eindents_preview.php?p_id=$p_id&tid=$tid&remarks=$remarks&raisedby=$raisedby'</script>";	
+		
+		// Get QR IDs if present
+		$qr_ids = isset($_POST['qr_ids']) ? trim($_POST['qr_ids']) : "";
+		$qr_ids_param = !empty($qr_ids) ? "&qr_ids=" . urlencode($qr_ids) : "";
+		
+		echo "<script>window.location='add_issue_eindents_preview.php?p_id=$p_id&tid=$tid&remarks=$remarks&raisedby=$raisedby" . $qr_ids_param . "'</script>";	
 	}
 	
 $a="TIE";
@@ -398,7 +403,7 @@ function openQRScanInterface() {
 	return false;
 }
 
-function setQRTotalWeight(totalWeight) {
+function setQRTotalWeight(totalWeight, qrIdList) {
 	// Find the issueqty field for the current row and set it
 	// Need to find which row was being edited (the last one with focus)
 	
@@ -412,6 +417,14 @@ function setQRTotalWeight(totalWeight) {
 		lastQtyField.style.backgroundColor = '#CCCCCC';
 		
 		console.log('QR Debug: Quantity field populated:', lastQtyField.name, '=', totalWeight);
+		
+		// Store QR IDs for final submission
+		if(qrIdList && qrIdList.length > 0)
+		{
+			var qrIdString = qrIdList.join(',');
+			document.frmaddDepartment.qr_ids.value = qrIdString;
+			console.log('QR IDs stored:', qrIdString);
+		}
 		
 		// Show success feedback
 		alert('QR codes scanned successfully!\n\nTotal Weight: ' + totalWeight + '\n\nQuantity field has been populated and locked.');
@@ -1095,6 +1108,7 @@ $sr=$sr+1;
 </table>
 <input type="hidden" name="trid" value="<?php echo $trid?>" />
 <input type="hidden" name="raisedby" value="<?php echo $resetresult['name'];?>" />
+<input type="hidden" name="qr_ids" id="qr_ids" value="" />
 <br />
 <div id="subdiv">
 <table align="center" border="1" width="850" cellspacing="0" cellpadding="0" bordercolor="#4ea1e1" style="border-collapse:collapse" >

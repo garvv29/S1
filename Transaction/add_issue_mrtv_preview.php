@@ -290,6 +290,29 @@ $cod="IV".$code;
 $sql_gp="insert into tbl_gate (gpcode,trid,yearcode) values('$gpcode','$cod','$yearid_id')";
 mysql_query($sql_gp) or die (mysql_error());
 
+// Mark all scanned QR codes (used=1) as finalsubmit=2 for this completed transaction
+// Mark all scanned QR codes as used and finalsubmit for this completed transaction
+// FIRST: Mark QR IDs explicitly if passed from form
+if(isset($_REQUEST['qr_ids']) && $_REQUEST['qr_ids'] != '')
+{
+	$qr_ids_to_update = $_REQUEST['qr_ids'];
+	$qr_id_array = explode(',', $qr_ids_to_update);
+	
+	foreach($qr_id_array as $qr_id)
+	{
+		$qr_id = trim($qr_id);
+		if($qr_id != '' && is_numeric($qr_id))
+		{
+			// Mark as both used=1 and finalsubmit=2
+			$sql_qr_update = "UPDATE tbl_qr_codes SET used=1, finalsubmit=2 WHERE qr_id='$qr_id'";
+			mysql_query($sql_qr_update) or die("Error marking QR $qr_id: " . mysql_error());
+		}
+	}
+}
+
+// BACKUP: Also mark all used=1 codes that haven't been finalized yet
+$qr_backup_sql = "UPDATE tbl_qr_codes SET finalsubmit=2 WHERE used=1 AND finalsubmit != 2";
+$qr_backup_result = mysql_query($qr_backup_sql) or die("Error updating QR codes: " . mysql_error());
 
 			echo "<script>window.location='select_issue_mrtvop.php?p_id=$pid'</script>";	
 }

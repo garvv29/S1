@@ -67,6 +67,11 @@ $sql_issue=mysql_query("select distinct stlg_whid, stlg_subbinid, stlg_binid fro
 
 $srno=1; $rtotalups=0; $rtotalqty=0;$cnt=0;
 
+// Fetch classification name to detect Roll type
+$sql_class=mysql_query("select classification from tbl_classification where classification_id='".$c."'") or die(mysql_error());
+$row_class=mysql_fetch_array($sql_class);
+$isRoll = (stripos($row_class['classification'], 'Roll') !== false) ? 1 : 0;
+
  while($row_issue=mysql_fetch_array($sql_issue))
  { 
  
@@ -107,7 +112,13 @@ $rtotalqty=$rtotalqty+$row_issuetbl['stlg_balqty'];
 <td align="center" valign="middle" class="tblheading"><?php echo $slocs;?></td>
 <td align="center" valign="middle" class="tblheading"><input type="text" id="upsavl_<?php echo $srno;?>" name="upsavl_<?php echo $srno;?>" readonly="true" style="background-color:#CCCCCC" value="<?php echo $row_issuetbl['stlg_balups'];?>" size="5" /></td>
 <td align="center" valign="middle" class="tblheading"><input type="text" id="qtyavl_<?php echo $srno;?>" name="qtyavl_<?php echo $srno;?>" readonly="true" style="background-color:#CCCCCC" value="<?php echo $row_issuetbl['stlg_balqty'];?>" size="5" /></td>
-<td align="center" valign="middle" class="tblheading"><input type="text" id="issueups_<?php echo $srno;?>" name="issueups_<?php echo $srno;?>" class="tbltext" size="5" value="0" onchange="upschk(this.value,'<?php echo $srno;?>')"  onkeypress="return isNumberKey(event)" /></td>
+<td align="center" valign="middle" class="tblheading">
+<div style="display:flex; gap:5px; align-items:center; justify-content:center;">
+<input type="text" id="issueups_<?php echo $srno;?>" name="issueups_<?php echo $srno;?>" class="tbltext" size="3" value="0" onchange="upschk(this.value,'<?php echo $srno;?>'); checkQRButtonVisibility('<?php echo $srno;?>', '<?php echo $c;?>', '<?php echo $f;?>')"  onkeypress="return isNumberKey(event)" />
+<span id="qrbtn_<?php echo $srno;?>" style="display:none;"><a href="javascript:void(0)" onclick="openQRScanPopupFromSLOC('<?php echo $srno;?>', '<?php echo $c;?>', '<?php echo $f;?>')" style="color:#0066cc; text-decoration:underline; font-size:11px; font-weight:bold; white-space:nowrap;">Scan QR</a></span>
+<input type="hidden" id="classisroll_<?php echo $srno;?>" value="<?php echo $isRoll;?>" />
+</div>
+</td>
 <td align="center" valign="middle" class="tblheading"><input type="text" id="issueqty_<?php echo $srno;?>" name="issueqty_<?php echo $srno;?>" class="tbltext" size="5" value="0" onchange="qtychk(this.value,'<?php echo $srno?>')"  onkeypress="return isNumberKey(event)" /></td>
 <td align="center" valign="middle" class="tblheading"><input type="text" id="balups_<?php echo $srno?>" name="balups_<?php echo $srno;?>" class="tbltext" size="5" value="<?php echo $row_issuetbl['stlg_balups'];?>"  onkeypress="return isNumberKey(event)" /></td>
 <td align="center" valign="middle" class="tblheading"><input type="text" id="balqty_<?php echo $srno;?>" name="balqty_<?php echo $srno;?>" class="tbltext" size="5" value="<?php echo $row_issuetbl['stlg_balqty'];?>" readonly="true" style="background-color:#CCCCCC" /></td>
@@ -122,7 +133,13 @@ $rtotalqty=$rtotalqty+$row_issuetbl['stlg_balqty'];
 <td align="center" valign="middle" class="tblheading"><?php echo $slocs;?></td>
 <td align="center" valign="middle" class="tblheading"><input type="text" id="upsavl_<?php echo $srno;?>" name="upsavl_<?php echo $srno;?>" readonly="true" style="background-color:#CCCCCC" value="<?php echo $row_issuetbl['stlg_balups'];?>" size="5" /></td>
 <td align="center" valign="middle" class="tblheading"><input type="text" id="qtyavl_<?php echo $srno;?>" name="qtyavl_<?php echo $srno;?>" readonly="true" style="background-color:#CCCCCC" value="<?php echo $row_issuetbl['stlg_balqty'];?>" size="5" /></td>
-<td align="center" valign="middle" class="tblheading"><input type="text" id="issueups_<?php echo $srno;?>" name="issueups_<?php echo $srno;?>" class="tbltext" size="5" value="0" onchange="upschk(this.value,'<?php echo $srno;?>')"  onkeypress="return isNumberKey(event)" /></td>
+<td align="center" valign="middle" class="tblheading">
+<div style="display:flex; gap:5px; align-items:center; justify-content:center;">
+<input type="text" id="issueups_<?php echo $srno;?>" name="issueups_<?php echo $srno;?>" class="tbltext" size="3" value="0" onchange="upschk(this.value,'<?php echo $srno;?>'); checkQRButtonVisibility('<?php echo $srno;?>', '<?php echo $c;?>', '<?php echo $f;?>')"  onkeypress="return isNumberKey(event)" />
+<span id="qrbtn_<?php echo $srno;?>" style="display:none;"><a href="javascript:void(0)" onclick="openQRScanPopupFromSLOC('<?php echo $srno;?>', '<?php echo $c;?>', '<?php echo $f;?>')" style="color:#0066cc; text-decoration:underline; font-size:11px; font-weight:bold; white-space:nowrap;">Scan QR</a></span>
+<input type="hidden" id="classisroll_<?php echo $srno;?>" value="<?php echo $isRoll;?>" />
+</div>
+</td>
 <td align="center" valign="middle" class="tblheading"><input type="text" id="issueqty_<?php echo $srno;?>" name="issueqty_<?php echo $srno;?>" class="tbltext" size="5" value="0" onchange="qtychk(this.value,'<?php echo $srno?>')"   onkeypress="return isNumberKey(event)"/></td>
 <td align="center" valign="middle" class="tblheading"><input type="text" id="balups_<?php echo $srno?>" name="balups_<?php echo $srno;?>" class="tbltext" size="5" value="<?php echo $row_issuetbl['stlg_balups'];?>"  onkeypress="return isNumberKey(event)" /></td>
 <td align="center" valign="middle" class="tblheading"><input type="text" id="balqty_<?php echo $srno;?>" name="balqty_<?php echo $srno;?>" class="tbltext" size="5" value="<?php echo $row_issuetbl['stlg_balqty'];?>" readonly="true" style="background-color:#CCCCCC" /></td>

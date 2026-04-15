@@ -23,6 +23,11 @@
 	
 	//$logid=22;
 	
+	// Initialize variables
+	$tid = 0;
+	$pid = 0;
+	$qr_ids = '';
+	
 	if(isset($_REQUEST['tid']))
 	{
 	$tid = $_REQUEST['tid'];
@@ -31,6 +36,12 @@
 	{
 	$pid = $_REQUEST['p_id'];
 	}
+	// Handle POST submission with p_id hidden field
+	if(isset($_POST['p_id'])) { $pid = $_POST['p_id']; }
+	
+	// Get QR IDs from GET or POST
+	if(isset($_GET['qr_ids'])) { $qr_ids = $_GET['qr_ids']; }
+	if(isset($_REQUEST['qr_ids'])) { $qr_ids = $_REQUEST['qr_ids']; }
 	
 	if(isset($_GET['remarks']))
 	{
@@ -41,43 +52,39 @@
 
 	$a1234=mysql_query($sql_main222) or die(mysql_error());
 	
-	if(isset($_POST['frm_action'])=='submit')
-	{	
-		$pid=trim($_POST['pid']);
-		$tid=trim($_POST['tid']);
-		
-		
-	$sql_arr=mysql_query("select * from tblissue where issue_id='".$pid."'") or die(mysql_error());
-	while($row_arr=mysql_fetch_array($sql_arr))
+	if(isset($_POST['frm_action']) && $_POST['frm_action']=='submit')
 	{
-	$partyid=$row_arr['party_id'];
-	$trdate=$row_arr['issue_date'];
-	
-	$sql_arrsub=mysql_query("select * from tblissue_sub where issue_id='".$pid."'") or die(mysql_error());
-	while($row_arrsub=mysql_fetch_array($sql_arrsub))
-	{
-		$classid=$row_arrsub['classification_id'];
-		$itemid=$row_arrsub['item_id'];
-		
-		$sql_arrsub_sub=mysql_query("select * from tblissue_sloc where issue_tr_id='".$pid."' and issue_id='".$row_arrsub['issuesub_id']."'") or die(mysql_error());
-		while($row_arrsub_sub=mysql_fetch_array($sql_arrsub_sub))
+		$sql_arr=mysql_query("select * from tblissue where issue_id='".$pid."'") or die(mysql_error());
+		while($row_arr=mysql_fetch_array($sql_arr))
 		{
-			$whid=$row_arrsub_sub['whid'];
-			$binid=$row_arrsub_sub['binid'];
-			$subbinid=$row_arrsub_sub['subbin'];
-			$ups=$row_arrsub_sub['ups_issue'];
-			$qty=$row_arrsub_sub['qty_issue'];
+		$partyid=$row_arr['party_id'];
+		$trdate=$row_arr['issue_date'];
+		
+		$sql_arrsub=mysql_query("select * from tblissue_sub where issue_id='".$pid."'") or die(mysql_error());
+		while($row_arrsub=mysql_fetch_array($sql_arrsub))
+		{
+			$classid=$row_arrsub['classification_id'];
+			$itemid=$row_arrsub['item_id'];
 			
-				$sql_issue1=mysql_query("select max(stlg_id) from tbl_stldg_good where stlg_subbinid='".$subbinid."' and stlg_binid='".$binid."' and stlg_whid='".$whid."' and stlg_tritemid='".$itemid."'") or die(mysql_error());
-				$row_issue1=mysql_fetch_array($sql_issue1); 
-					
-				$sql_issuetbl=mysql_query("select * from tbl_stldg_good where stlg_id='".$row_issue1[0]."'") or die(mysql_error()); 
-				$row_issuetbl=mysql_fetch_array($sql_issuetbl);
-				$opups=$row_issuetbl['stlg_balups'];
-				$opqty=$row_issuetbl['stlg_balqty'];
-				$balups=$opups-$ups;
-				$balqty=$opqty-$qty;
-				if($balqty > 0 && $balups==0) $balups=1;
+			$sql_arrsub_sub=mysql_query("select * from tblissue_sloc where issue_tr_id='".$pid."' and issue_id='".$row_arrsub['issuesub_id']."'") or die(mysql_error());
+			while($row_arrsub_sub=mysql_fetch_array($sql_arrsub_sub))
+			{
+				$whid=$row_arrsub_sub['whid'];
+				$binid=$row_arrsub_sub['binid'];
+				$subbinid=$row_arrsub_sub['subbin'];
+				$ups=$row_arrsub_sub['ups_issue'];
+				$qty=$row_arrsub_sub['qty_issue'];
+				
+					$sql_issue1=mysql_query("select max(stlg_id) from tbl_stldg_good where stlg_subbinid='".$subbinid."' and stlg_binid='".$binid."' and stlg_whid='".$whid."' and stlg_tritemid='".$itemid."'") or die(mysql_error());
+					$row_issue1=mysql_fetch_array($sql_issue1); 
+						
+					$sql_issuetbl=mysql_query("select * from tbl_stldg_good where stlg_id='".$row_issue1[0]."'") or die(mysql_error()); 
+					$row_issuetbl=mysql_fetch_array($sql_issuetbl);
+					$opups=$row_issuetbl['stlg_balups'];
+					$opqty=$row_issuetbl['stlg_balqty'];
+					$balups=$opups-$ups;
+					$balqty=$opqty-$qty;
+					if($balqty > 0 && $balups==0) $balups=1;
 				if($balqty==0 && $balups>0) $balups=0;
 				$sql_sub_sub="insert into tbl_stldg_good (yearcode,stlg_trtype, stlg_trsubtype, stlg_trid, stlg_trpartyid, stlg_trdate, stlg_trclassid, stlg_tritemid, stlg_whid, stlg_binid, stlg_subbinid, stlg_opups, stlg_opqty, stlg_trups, stlg_trqty, stlg_balups, stlg_balqty) values('$yearid_id','Issue', 'pindent', '$pid', '$partyid', '$trdate', '$classid', '$itemid', '$whid', '$binid', '$subbinid', '$opups', '$opqty', '$ups', '$qty', '$balups', '$balqty')";
 				mysql_query($sql_sub_sub) or die(mysql_error());
@@ -177,6 +184,28 @@ $sql_code="SELECT MAX(iss_code) FROM tblissue where  yearcode='$yearid_id'and  i
 
 	$a123456=mysql_query($sql_main) or die(mysql_error());
 
+// Mark all scanned QR codes as used and finalsubmit for this completed transaction
+	// FIRST: Mark QR IDs explicitly if passed from form
+	if(isset($_REQUEST['qr_ids']) && $_REQUEST['qr_ids'] != '')
+	{
+		$qr_ids_to_update = $_REQUEST['qr_ids'];
+		$qr_id_array = explode(',', $qr_ids_to_update);
+		
+		foreach($qr_id_array as $qr_id)
+		{
+			$qr_id = trim($qr_id);
+			if($qr_id != '' && is_numeric($qr_id))
+			{
+				// Mark as both used=1 and finalsubmit=2
+				$sql_qr_update = "UPDATE tbl_qr_codes SET used=1, finalsubmit=2 WHERE qr_id='$qr_id'";
+				mysql_query($sql_qr_update) or die("Error marking QR $qr_id: " . mysql_error());
+			}
+		}
+	}
+	
+	// BACKUP: Also mark all used=1 codes that haven't been finalized yet
+	$qr_backup_sql = "UPDATE tbl_qr_codes SET finalsubmit=2 WHERE used=1 AND finalsubmit != 2";
+	$qr_backup_result = mysql_query($qr_backup_sql) or die("Error updating QR codes: " . mysql_error());
 
 			echo "<script>window.location='select_issue_pindentop.php?p_id=$pid'</script>";	
 }
@@ -384,6 +413,8 @@ function mySubmit()
 	<input name="code" type="hidden" value="<?php echo $code;?>" />
 	<input name="tid" type="hidden" value="<?php echo $tid;?>" />
 	<input name="pid" type="hidden" value="<?php echo $pid;?>" />
+	<input name="p_id" type="hidden" value="<?php echo $pid;?>" />
+	<input name="qr_ids" type="hidden" value="<?php echo $qr_ids;?>" />
 	
 <table  border="0" cellspacing="0" cellpadding="0" align="center" width="974"  style="border-collapse:collapse">
 <tr>
@@ -406,7 +437,7 @@ function mySubmit()
 
 	
 	 <tr class="Dark" height="30">
-	 <td width="205" align="right" valign="middle" class="tblheading">Transaction ID   </td>
+	 <td width="205" align="right" valign="middle" class="tblheading">Transaction ID ï¿½ï¿½</td>
 <td width="215"  align="left" valign="middle" class="tbltext">&nbsp;<?php echo "TIP".$row['issue_code']."/".$yearid_id."/".$lgnid;?></td>
 
 <td width="193" align="right" valign="middle" class="tblheading">P-Indent Issue&nbsp;Date&nbsp;</td>
